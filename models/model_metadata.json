@@ -1,0 +1,457 @@
+{
+  "model_type": "XGBoostClassifier (multi:softprob)",
+  "training_date": "2026-09-18T10:48:26.430592+00:00",
+  "training_dataset_size": 20828,
+  "feature_count": 39,
+  "class_names": [
+    "Agricultural",
+    "Forest",
+    "Industrial",
+    "Mining",
+    "Other"
+  ],
+  "n_classes": 5,
+  "spatial_split_latitude": 15.0,
+  "spatial_split_description": "Events south of 15.0\u00b0 N used as test set (southern India). Prevents spatial autocorrelation leakage.",
+  "label_type": "weak_geographic_labels_NOT_verified_fire_cause",
+  "evaluation_experiment_A": {
+    "experiment": "exp_A_with_distances",
+    "test_size": 8877,
+    "accuracy": 0.993016,
+    "macro_f1": 0.987572,
+    "weighted_f1": 0.993007,
+    "per_class_metrics": {
+      "Agricultural": {
+        "precision": 0.9949,
+        "recall": 0.9912,
+        "f1": 0.9931,
+        "support": 3176
+      },
+      "Forest": {
+        "precision": 0.9692,
+        "recall": 0.9836,
+        "f1": 0.9763,
+        "support": 608
+      },
+      "Industrial": {
+        "precision": 0.9976,
+        "recall": 0.9602,
+        "f1": 0.9785,
+        "support": 427
+      },
+      "Mining": {
+        "precision": 1.0,
+        "recall": 0.9868,
+        "f1": 0.9934,
+        "support": 152
+      },
+      "Other": {
+        "precision": 0.9943,
+        "recall": 0.9989,
+        "f1": 0.9966,
+        "support": 4514
+      }
+    },
+    "confusion_matrix_counts": [
+      [
+        3148,
+        1,
+        1,
+        0,
+        26
+      ],
+      [
+        10,
+        598,
+        0,
+        0,
+        0
+      ],
+      [
+        4,
+        13,
+        410,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        150,
+        0
+      ],
+      [
+        1,
+        4,
+        0,
+        0,
+        4509
+      ]
+    ],
+    "confusion_matrix_normalized": [
+      [
+        0.9912,
+        0.0003,
+        0.0003,
+        0.0,
+        0.0082
+      ],
+      [
+        0.0164,
+        0.9836,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0094,
+        0.0304,
+        0.9602,
+        0.0,
+        0.0
+      ],
+      [
+        0.0066,
+        0.0066,
+        0.0,
+        0.9868,
+        0.0
+      ],
+      [
+        0.0002,
+        0.0009,
+        0.0,
+        0.0,
+        0.9989
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "Agricultural",
+      "Forest",
+      "Industrial",
+      "Mining",
+      "Other"
+    ],
+    "possible_leakage_flag": "WARNING: Very high accuracy/F1 \u2014 strong label-distance leakage likely. Check Experiment B (without distance features) for honest performance."
+  },
+  "evaluation_experiment_B": {
+    "experiment": "exp_B_without_distances",
+    "test_size": 8877,
+    "accuracy": 0.507491,
+    "macro_f1": 0.152714,
+    "weighted_f1": 0.346242,
+    "per_class_metrics": {
+      "Agricultural": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 3176
+      },
+      "Forest": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 608
+      },
+      "Industrial": {
+        "precision": 0.6364,
+        "recall": 0.0492,
+        "f1": 0.0913,
+        "support": 427
+      },
+      "Mining": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 152
+      },
+      "Other": {
+        "precision": 0.508,
+        "recall": 0.9934,
+        "f1": 0.6723,
+        "support": 4514
+      }
+    },
+    "confusion_matrix_counts": [
+      [
+        0,
+        0,
+        0,
+        0,
+        3176
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        608
+      ],
+      [
+        0,
+        0,
+        21,
+        0,
+        406
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        152
+      ],
+      [
+        1,
+        17,
+        12,
+        0,
+        4484
+      ]
+    ],
+    "confusion_matrix_normalized": [
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0492,
+        0.0,
+        0.9508
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0002,
+        0.0038,
+        0.0027,
+        0.0,
+        0.9934
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "Agricultural",
+      "Forest",
+      "Industrial",
+      "Mining",
+      "Other"
+    ],
+    "possible_leakage_flag": "No obvious leakage flag from accuracy alone."
+  },
+  "evaluation_experiment_C": {
+    "experiment": "exp_C_no_osm_features",
+    "test_size": 8877,
+    "accuracy": 0.507604,
+    "macro_f1": 0.134709,
+    "weighted_f1": 0.3425,
+    "per_class_metrics": {
+      "Agricultural": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 3176
+      },
+      "Forest": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 608
+      },
+      "Industrial": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 427
+      },
+      "Mining": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 152
+      },
+      "Other": {
+        "precision": 0.5082,
+        "recall": 0.9982,
+        "f1": 0.6735,
+        "support": 4514
+      }
+    },
+    "confusion_matrix_counts": [
+      [
+        0,
+        1,
+        1,
+        0,
+        3174
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        608
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        426
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        152
+      ],
+      [
+        0,
+        4,
+        4,
+        0,
+        4506
+      ]
+    ],
+    "confusion_matrix_normalized": [
+      [
+        0.0,
+        0.0003,
+        0.0003,
+        0.0,
+        0.9994
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0023,
+        0.0,
+        0.0,
+        0.9977
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0009,
+        0.0009,
+        0.0,
+        0.9982
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "Agricultural",
+      "Forest",
+      "Industrial",
+      "Mining",
+      "Other"
+    ],
+    "possible_leakage_flag": "No obvious leakage flag from accuracy alone."
+  },
+  "leakage_diagnostic": {
+    "experiment_A_all_features": {
+      "accuracy": 0.993016,
+      "macro_f1": 0.987572,
+      "description": "All features (distance_to_*, ctx_*, near_*, thermal, temporal)",
+      "leakage_risk": "HIGH"
+    },
+    "experiment_B_no_distances": {
+      "accuracy": 0.507491,
+      "macro_f1": 0.152714,
+      "description": "distance_to_* and near_* removed; ctx_* context features kept",
+      "leakage_risk": "MEDIUM \u2014 ctx_* are OSM-derived"
+    },
+    "experiment_C_no_osm": {
+      "accuracy": 0.507604,
+      "macro_f1": 0.134709,
+      "description": "ALL OSM-derived features removed \u2014 pure thermal + temporal signal",
+      "leakage_risk": "NONE \u2014 fully honest benchmark"
+    },
+    "accuracy_drop_A_minus_B": 0.4855,
+    "macro_f1_drop_A_minus_B": 0.8349,
+    "accuracy_drop_A_minus_C": 0.4854,
+    "macro_f1_drop_A_minus_C": 0.8529,
+    "leakage_detected": true,
+    "primary_honest_benchmark": "experiment_C",
+    "label_type": "weak_geographic_labels_NOT_verified_fire_cause",
+    "interpretation": "SIGNIFICANT LEAKAGE CONFIRMED. Experiment C (no OSM features) is the only fully honest performance estimate. Experiments A and B both contain OSM-derived features that were also used to generate source_label, producing artificially inflated metrics.",
+    "recommendation": "Report Experiment C Macro F1 as the model's actual capability. Experiment A is an upper bound only \u2014 not a realistic performance estimate."
+  },
+  "primary_benchmark": "experiment_C",
+  "primary_benchmark_rationale": "Experiment C uses ONLY thermal and temporal satellite features \u2014 zero OSM-derived inputs. It is the only fully leakage-free benchmark. Experiments A and B are retained for comparison but not used for conservative performance estimation.",
+  "top_10_features_by_importance": [
+    "ctx_forest_context",
+    "distance_to_forest",
+    "ctx_agricultural_context",
+    "distance_to_cropland",
+    "distance_to_quarry",
+    "ctx_mining_context",
+    "distance_to_factory",
+    "ctx_industrial_context",
+    "distance_to_refinery",
+    "distance_to_mine"
+  ],
+  "dataset_methodology": {
+    "thermal_source": "NASA FIRMS VIIRS NRT / NOAA-20",
+    "label_type": "weak_geographic_labels",
+    "label_method": "OSM proximity-based \u2014 NOT verified fire-cause ground truth",
+    "target_region": "India (bounding box 67,6,98,37)",
+    "label_classes": [
+      "Agricultural",
+      "Forest",
+      "Industrial",
+      "Mining",
+      "Other"
+    ],
+    "labeling_priority": [
+      "1. Industrial (nearest OSM industrial/factory/refinery/chemical/gas < 2 km)",
+      "2. Mining (nearest OSM mine/quarry < 2 km)",
+      "3. Forest (nearest OSM forest < 1 km)",
+      "4. Agricultural (nearest OSM farmland/cropland < 2 km)",
+      "5. Other (no proximity match)"
+    ]
+  },
+  "known_limitations": [
+    "Labels are weak geographic labels \u2014 not verified fire-cause ground truth.",
+    "OSM coverage in rural India is incomplete; unmapped features produce sentinel distances.",
+    "Distance features used for labeling correlate with model input features (label leakage). See leakage_diagnostic in this file for quantified impact.",
+    "Temporal persistence computed on FIRMS NRT data \u2014 only covers the acquisition window.",
+    "Model trained on a single temporal snapshot \u2014 seasonal variation not fully captured.",
+    "Class imbalance is handled by sample weighting, not oversampling.",
+    "Weather features are optional and may be largely NaN if Open-Meteo was unavailable."
+  ],
+  "reproduction_commands": [
+    "python scripts/download_firms_data.py",
+    "python ml/feature_engineering/build_features.py",
+    "python ml/training/train_model.py"
+  ]
+}

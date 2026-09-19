@@ -1,0 +1,132 @@
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F4F7FB] text-slate-800 font-sans antialiased selection:bg-blue-600 selection:text-white;
+  }
+}
+
+/* Custom Leaflet Map styling to match Reference Image 2 */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background-color: #0b1e36 !important;
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 0.75rem;
+}
+
+/* Custom Marker Styling */
+.custom-hotspot-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotspot-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: hotspot-ripple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.hotspot-core {
+  position: relative;
+  z-index: 2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.8), 0 0 24px rgba(239, 68, 68, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hotspot-core:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(234, 88, 12, 1), 0 0 35px rgba(239, 68, 68, 0.8);
+}
+
+@keyframes hotspot-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ---------------------------------------------------
+   PRINT / PDF EXPORT STYLES
+   --------------------------------------------------- */
+@media print {
+  /* Force background colors and gradients to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Only show elements with the .print-content class and their children */
+  .print-content, .print-content * {
+    visibility: visible;
+  }
+
+  /* Position the print content at the top left of the page */
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Hide specific UI elements within the print area */
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  /* Ensure page breaks don't cut content awkwardly */
+  .print-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
