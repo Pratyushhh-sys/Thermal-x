@@ -1,45 +1,45 @@
 {
-  "n_rows": 20828,
+  "n_rows": 1164,
   "n_columns": 47,
   "missing_values": {
     "wind_speed": {
-      "count": 20828,
+      "count": 1164,
       "pct": 100.0
     },
     "wind_direction": {
-      "count": 20828,
+      "count": 1164,
       "pct": 100.0
     },
     "temperature": {
-      "count": 20828,
+      "count": 1164,
       "pct": 100.0
     },
     "humidity": {
-      "count": 20828,
+      "count": 1164,
       "pct": 100.0
     }
   },
   "duplicate_rows": 0,
   "class_distribution": {
-    "Other": {
-      "count": 9229,
-      "pct": 44.31
-    },
     "Industrial": {
-      "count": 4571,
-      "pct": 21.95
+      "count": 401,
+      "pct": 34.45
     },
-    "Agricultural": {
-      "count": 3453,
-      "pct": 16.58
+    "Other": {
+      "count": 394,
+      "pct": 33.85
     },
     "Mining": {
-      "count": 2833,
-      "pct": 13.6
+      "count": 322,
+      "pct": 27.66
+    },
+    "Agricultural": {
+      "count": 37,
+      "pct": 3.18
     },
     "Forest": {
-      "count": 742,
-      "pct": 3.56
+      "count": 10,
+      "pct": 0.86
     }
   },
   "n_classes": 5,
@@ -49,25 +49,25 @@
   },
   "invalid_frp_count": 0,
   "frp_stats": {
-    "min": 0.11,
-    "max": 254.85,
-    "mean": 4.400980410985212,
-    "median": 3.06,
-    "p99": 21.859199999999984
+    "min": 0.17,
+    "max": 19.9,
+    "mean": 2.5127147766323024,
+    "median": 1.79,
+    "p99": 11.99
   },
   "outlier_counts_iqr3": {
-    "month": 3365,
-    "frp": 382,
-    "brightness": 1,
-    "brightness_ti5": 5,
-    "brightness_diff": 1,
-    "confidence_numeric": 1589,
-    "observation_count_last_7": 1074,
-    "avg_frp": 299,
-    "max_frp": 558,
-    "min_frp": 229,
-    "frp_trend": 5230,
-    "frp_std": 575
+    "latitude": 83,
+    "hour": 258,
+    "day_night": 258,
+    "frp": 36,
+    "brightness_ti5": 26,
+    "confidence_numeric": 35,
+    "scan": 3,
+    "observation_count_last_7": 6,
+    "avg_frp": 18,
+    "min_frp": 69,
+    "frp_trend": 133,
+    "frp_std": 1
   },
   "top_feature_correlations": [
     {
@@ -78,72 +78,72 @@
     {
       "col_a": "hour",
       "col_b": "day_night",
-      "correlation": 0.995
+      "correlation": 0.9937
     },
     {
       "col_a": "observation_count_last_7",
       "col_b": "night_count",
-      "correlation": 0.9796
+      "correlation": 0.9665
     },
     {
       "col_a": "max_frp",
       "col_b": "frp_std",
-      "correlation": 0.932
-    },
-    {
-      "col_a": "day_night",
-      "col_b": "brightness",
-      "correlation": 0.8768
-    },
-    {
-      "col_a": "hour",
-      "col_b": "brightness",
-      "correlation": 0.8695
+      "correlation": 0.8787
     },
     {
       "col_a": "brightness",
       "col_b": "brightness_diff",
-      "correlation": 0.8682
+      "correlation": 0.8381
     },
     {
       "col_a": "avg_frp",
       "col_b": "min_frp",
-      "correlation": 0.8116
+      "correlation": 0.8254
     },
     {
-      "col_a": "avg_frp",
-      "col_b": "max_frp",
-      "correlation": 0.7878
+      "col_a": "day_night",
+      "col_b": "brightness",
+      "correlation": 0.8173
     },
     {
       "col_a": "frp",
       "col_b": "avg_frp",
-      "correlation": 0.7867
-    },
-    {
-      "col_a": "active_days_last_7",
-      "col_b": "night_count",
-      "correlation": 0.7723
-    },
-    {
-      "col_a": "persistence_ratio",
-      "col_b": "night_count",
-      "correlation": 0.7723
-    },
-    {
-      "col_a": "active_days_last_7",
-      "col_b": "observation_count_last_7",
-      "correlation": 0.7493
-    },
-    {
-      "col_a": "persistence_ratio",
-      "col_b": "observation_count_last_7",
-      "correlation": 0.7493
+      "correlation": 0.816
     },
     {
       "col_a": "hour",
-      "col_b": "brightness_diff",
-      "correlation": 0.7127
+      "col_b": "brightness",
+      "correlation": 0.8149
+    },
+    {
+      "col_a": "avg_frp",
+      "col_b": "max_frp",
+      "correlation": 0.7787
+    },
+    {
+      "col_a": "frp",
+      "col_b": "brightness",
+      "correlation": 0.7363
+    },
+    {
+      "col_a": "frp",
+      "col_b": "min_frp",
+      "correlation": 0.7019
+    },
+    {
+      "col_a": "persistence_ratio",
+      "col_b": "night_count",
+      "correlation": 0.6817
+    },
+    {
+      "col_a": "active_days_last_7",
+      "col_b": "night_count",
+      "correlation": 0.6817
+    },
+    {
+      "col_a": "persistence_ratio",
+      "col_b": "observation_count_last_7",
+      "correlation": 0.6779
     }
   ]
 }

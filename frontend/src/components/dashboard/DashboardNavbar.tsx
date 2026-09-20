@@ -94,7 +94,7 @@ export const DashboardNavbar: React.FC = () => {
     : [];
 
   return (
-    <header className="sticky top-0 z-40 glass-panel">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         
         {/* Left: Brand / SIH Identity matching Reference Image 2 */}

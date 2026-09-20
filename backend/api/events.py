@@ -37,6 +37,7 @@ from backend.schemas.event_schema import (
     RiskComponentsSchema,
     EventMetadataSchema,
     EnvironmentSchema,
+    WeatherSchema,
 )
 from backend.services.classification_service import classify_event
 from backend.services.persistence_service import extract_persistence_from_row
@@ -309,6 +310,7 @@ def _build_response(
             temperature=_opt_float(row.get("temperature")),
             humidity=_opt_float(row.get("humidity")),
         ),
+        weather=_build_weather(row),
         metadata=EventMetadataSchema(
             event_id=event_id,
             model_primary="source_classifier_exp_c.pkl (Experiment C — thermal+temporal only)",
@@ -320,6 +322,40 @@ def _build_response(
         ),
     )
 
+
+def _build_weather(row: dict) -> Optional[WeatherSchema]:
+    if "u10" not in row and "wind_speed_10m" not in row:
+        return None
+        
+    import math
+    u10 = _opt_float(row.get("u10"))
+    v10 = _opt_float(row.get("v10"))
+    wind_speed = _opt_float(row.get("wind_speed_10m"))
+    wind_dir = _opt_float(row.get("wind_direction_10m_deg"))
+    
+    if wind_speed is None and u10 is not None and v10 is not None:
+        wind_speed = math.sqrt(u10**2 + v10**2)
+        
+    if wind_dir is None and u10 is not None and v10 is not None:
+        math_dir = math.atan2(v10, u10) * 180 / math.pi
+        wind_dir = (270 - math_dir) % 360
+
+    dispersion_dir = None
+    if wind_dir is not None:
+        dispersion_dir = (wind_dir + 180) % 360
+
+    return WeatherSchema(
+        wind_speed_10m=wind_speed,
+        wind_direction_10m_deg=wind_dir,
+        u10=u10,
+        v10=v10,
+        dispersion_direction_deg=dispersion_dir,
+        temperature_2m_C=_opt_float(row.get("temperature_2m_C")),
+        relative_humidity_2m_percent=_opt_float(row.get("relative_humidity_2m_percent")),
+        precipitation_mm=_opt_float(row.get("precipitation_mm")),
+        weather_time_used=str(row.get("weather_time_used")) if row.get("weather_time_used") is not None and str(row.get("weather_time_used")) != 'nan' else None,
+        weather_match_status=str(row.get("weather_match_status")) if row.get("weather_match_status") is not None and str(row.get("weather_match_status")) != 'nan' else None,
+    )
 
 def _opt_float(val) -> Optional[float]:
     """BUG-B13: numpy is now imported at top level, not inside this function."""

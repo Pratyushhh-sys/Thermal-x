@@ -1,8 +1,8 @@
 {
-  "obs_start": "2026-08-24",
-  "obs_end": "2026-09-18",
-  "obs_days": 26,
-  "mode": "historical",
-  "total_rows": 20828,
-  "note": "Historical window fetched via FIRMS date-range API."
+  "obs_start": "unknown",
+  "obs_end": "unknown",
+  "obs_days": 5,
+  "mode": "nrt",
+  "total_rows": 1164,
+  "note": "Actual observation window. Persistence features require >=7 days."
 }

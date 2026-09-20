@@ -23,10 +23,20 @@ export interface ThermalEvent {
   attributionReasoning: string;
   windSpeed: string;
   plumeDirection: string;
+  weatherMatch?: string;
+  weatherTime?: string;
   markerType: 'fire-red' | 'fire-orange' | 'warning-red' | 'factory-blue' | 'check-green' | 'forest-green' | 'agri-yellow' | 'mine-purple';
   mapLabel?: string;
   // Full backend event detail response — populated when user selects this event
   rawDetail?: any;
+
+  // NEW ERA5 WEATHER FIELDS
+  temperature_2m_C?: number;
+  relative_humidity_2m_percent?: number;
+  precipitation_mm?: number;
+  wind_speed_10m?: number;
+  wind_direction_10m_deg?: number;
+  weather_match_status?: string;
 }
 
 export interface IndustrialFacility {

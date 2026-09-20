@@ -176,7 +176,12 @@ export const ExploreEventsModal: React.FC = () => {
                 >
                   <td className="py-3 font-bold text-[#0F284E]">{ev.id}</td>
                   <td className="py-3 text-slate-700">{ev.location}</td>
-                  <td className="py-3 text-slate-600 truncate max-w-xs">{ev.candidateSource}</td>
+                  <td className="py-3 text-slate-700 font-medium truncate max-w-sm" title={ev.candidateSource}>
+                    <div className="flex items-center space-x-1.5 truncate">
+                      <Factory className="w-3.5 h-3.5 text-blue-500/80 flex-shrink-0" />
+                      <span className="truncate text-slate-800">{ev.candidateSource}</span>
+                    </div>
+                  </td>
                   <td className="py-3 font-semibold text-slate-800">{ev.frp}</td>
                   <td className="py-3 font-bold text-blue-600">{ev.confidence}%</td>
                   <td className="py-3">

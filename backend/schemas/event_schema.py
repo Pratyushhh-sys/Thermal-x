@@ -158,6 +158,18 @@ class EventMetadataSchema(BaseModel):
     persistence_radius_km: float = Field(default=1.0)
 
 
+class WeatherSchema(BaseModel):
+    wind_speed_10m: Optional[float] = None
+    wind_direction_10m_deg: Optional[float] = None
+    u10: Optional[float] = None
+    v10: Optional[float] = None
+    dispersion_direction_deg: Optional[float] = None
+    temperature_2m_C: Optional[float] = None
+    relative_humidity_2m_percent: Optional[float] = None
+    precipitation_mm: Optional[float] = None
+    weather_time_used: Optional[str] = None
+    weather_match_status: Optional[str] = None
+
 class EnvironmentSchema(BaseModel):
     wind_speed: Optional[float] = Field(None, description="Wind speed (km/h or m/s)")
     wind_direction: Optional[float] = Field(None, description="Wind direction (degrees)")
@@ -178,6 +190,7 @@ class EventResponse(BaseModel):
     classification: ClassificationPairSchema
     risk: RiskSchema
     environment: EnvironmentSchema
+    weather: Optional[WeatherSchema] = None
     metadata: EventMetadataSchema
 
 
@@ -192,6 +205,8 @@ class EventListItem(BaseModel):
     risk_score: Optional[float] = None
     active_days_last_7: int = 0
     satellite: Optional[str] = None
+    candidate_source: Optional[str] = Field(None, description="Attributed facility or site name")
+    candidate_type: Optional[str] = Field(None, description="Type of attributed facility")
 
 
 class RiskSummarySchema(BaseModel):

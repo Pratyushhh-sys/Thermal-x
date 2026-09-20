@@ -23,5 +23,12 @@
   "wind_speed",
   "wind_direction",
   "temperature",
-  "humidity"
+  "humidity",
+  "time_difference_minutes",
+  "weather_grid_latitude",
+  "weather_grid_longitude",
+  "weather_grid_distance_km",
+  "t2m",
+  "sp",
+  "tcc"
 ]

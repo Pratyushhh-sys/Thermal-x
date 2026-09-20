@@ -1,0 +1,29 @@
+{
+  "experiment_A_all_features": {
+    "accuracy": 0.991889,
+    "macro_f1": 0.983398,
+    "description": "All features (distance_to_*, ctx_*, near_*, thermal, temporal)",
+    "leakage_risk": "HIGH"
+  },
+  "experiment_B_no_distances": {
+    "accuracy": 0.503548,
+    "macro_f1": 0.166786,
+    "description": "distance_to_* and near_* removed; ctx_* context features kept",
+    "leakage_risk": "MEDIUM \u2014 ctx_* are OSM-derived"
+  },
+  "experiment_C_no_osm": {
+    "accuracy": 0.506703,
+    "macro_f1": 0.142295,
+    "description": "ALL OSM-derived features removed \u2014 pure thermal + temporal signal",
+    "leakage_risk": "NONE \u2014 fully honest benchmark"
+  },
+  "accuracy_drop_A_minus_B": 0.4883,
+  "macro_f1_drop_A_minus_B": 0.8166,
+  "accuracy_drop_A_minus_C": 0.4852,
+  "macro_f1_drop_A_minus_C": 0.8411,
+  "leakage_detected": true,
+  "primary_honest_benchmark": "experiment_C",
+  "label_type": "weak_geographic_labels_NOT_verified_fire_cause",
+  "interpretation": "SIGNIFICANT LEAKAGE CONFIRMED. Experiment C (no OSM features) is the only fully honest performance estimate. Experiments A and B both contain OSM-derived features that were also used to generate source_label, producing artificially inflated metrics.",
+  "recommendation": "Report Experiment C Macro F1 as the model's actual capability. Experiment A is an upper bound only \u2014 not a realistic performance estimate."
+}

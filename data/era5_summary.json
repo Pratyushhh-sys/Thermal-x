@@ -1,0 +1,388 @@
+{
+  "file": "data\\data.grib",
+  "variables": {
+    "istl1": {
+      "units": "K",
+      "long_name": "Ice temperature layer 1",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "istl2": {
+      "units": "K",
+      "long_name": "Ice temperature layer 2",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "istl3": {
+      "units": "K",
+      "long_name": "Ice temperature layer 3",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "istl4": {
+      "units": "K",
+      "long_name": "Ice temperature layer 4",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "cvl": {
+      "units": "(0 - 1)",
+      "long_name": "Low vegetation cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "cvh": {
+      "units": "(0 - 1)",
+      "long_name": "High vegetation cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tvl": {
+      "units": "(Code table 4.234)",
+      "long_name": "Type of low vegetation",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tvh": {
+      "units": "(Code table 4.234)",
+      "long_name": "Type of high vegetation",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lai_lv": {
+      "units": "m**2 m**-2",
+      "long_name": "Leaf area index, low vegetation",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lai_hv": {
+      "units": "m**2 m**-2",
+      "long_name": "Leaf area index, high vegetation",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tclw": {
+      "units": "kg m**-2",
+      "long_name": "Total column cloud liquid water",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tciw": {
+      "units": "kg m**-2",
+      "long_name": "Total column cloud ice water",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "sp": {
+      "units": "Pa",
+      "long_name": "Surface pressure",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "msl": {
+      "units": "Pa",
+      "long_name": "Mean sea level pressure",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tcc": {
+      "units": "(0 - 1)",
+      "long_name": "Total cloud cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "u10": {
+      "units": "m s**-1",
+      "long_name": "10 metre U wind component",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "v10": {
+      "units": "m s**-1",
+      "long_name": "10 metre V wind component",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "t2m": {
+      "units": "K",
+      "long_name": "2 metre temperature",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lcc": {
+      "units": "(0 - 1)",
+      "long_name": "Low cloud cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "mcc": {
+      "units": "(0 - 1)",
+      "long_name": "Medium cloud cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "hcc": {
+      "units": "(0 - 1)",
+      "long_name": "High cloud cover",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "skt": {
+      "units": "K",
+      "long_name": "Skin temperature",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "tcrw": {
+      "units": "kg m**-2",
+      "long_name": "Total column rain water",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "u10n": {
+      "units": "m s**-1",
+      "long_name": "10 metre u-component of neutral wind",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "v10n": {
+      "units": "m s**-1",
+      "long_name": "10 metre v-component of neutral wind",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "u100": {
+      "units": "m s**-1",
+      "long_name": "100 metre U wind component",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "v100": {
+      "units": "m s**-1",
+      "long_name": "100 metre V wind component",
+      "dims": [
+        "time",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "fg10": {
+      "units": "m s**-1",
+      "long_name": "Maximum 10 metre wind gust since previous post-processing",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lspf": {
+      "units": "s",
+      "long_name": "Large-scale precipitation fraction",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lsp": {
+      "units": "m",
+      "long_name": "Large-scale precipitation",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "cp": {
+      "units": "m",
+      "long_name": "Convective precipitation",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "mx2t": {
+      "units": "K",
+      "long_name": "Maximum temperature at 2 metres since previous post-processing",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "mn2t": {
+      "units": "K",
+      "long_name": "Minimum temperature at 2 metres since previous post-processing",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "cbh": {
+      "units": "m",
+      "long_name": "Cloud base height",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "i10fg": {
+      "units": "m s**-1",
+      "long_name": "Instantaneous 10 metre wind gust",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "ilspf": {
+      "units": "Proportion",
+      "long_name": "Instantaneous large-scale precipitation fraction",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "crr": {
+      "units": "kg m**-2 s**-1",
+      "long_name": "Convective rain rate",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "lsrr": {
+      "units": "kg m**-2 s**-1",
+      "long_name": "Large scale rain rate",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "mxtpr": {
+      "units": "kg m**-2 s**-1",
+      "long_name": "Maximum total precipitation rate since previous post-processing",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "mntpr": {
+      "units": "kg m**-2 s**-1",
+      "long_name": "Minimum total precipitation rate since previous post-processing",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "ptype": {
+      "units": "(Code table 4.201)",
+      "long_name": "Precipitation type",
+      "dims": [
+        "time",
+        "step",
+        "latitude",
+        "longitude"
+      ]
+    }
+  }
+}

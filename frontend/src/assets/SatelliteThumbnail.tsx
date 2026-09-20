@@ -12,9 +12,9 @@ export const SatelliteThumbnail: React.FC<SatelliteThumbnailProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Hardcoded fallback image
+  // Fallback image
   const fallbackSrc = "/assets/selected_event_th1024.png";
-  const liveSrc = `http://localhost:8000/api/imagery/${eventId}`;
+  const liveSrc = `/api/imagery/${eventId}`;
 
   return (
     <div className={`relative rounded-lg overflow-hidden border border-slate-700/60 bg-slate-900 flex-shrink-0 shadow-md ${className}`}>

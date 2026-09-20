@@ -39,6 +39,7 @@ from ml.feature_engineering.osm_enrichment import (
     DEFAULT_MAX_DIST_KM,
     EARTH_RADIUS_KM,
 )
+from backend.services.facility_service import resolve_facility_name
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +122,11 @@ class OSMService:
 
             # Find the actual nearest coordinate for lat/lon
             near_lat, near_lon = self._nearest_coords(tree, coords, lat, lon)
+            resolved = resolve_facility_name(near_lat if near_lat is not None else lat, near_lon if near_lon is not None else lon, ftype)
 
             facility = {
                 "type": ftype,
-                "name": None,        # Names not stored in BallTree cache
+                "name": resolved["name"],
                 "distance_m": round(dist_m, 1),
                 "lat": round(near_lat, 6) if near_lat is not None else None,
                 "lon": round(near_lon, 6) if near_lon is not None else None,

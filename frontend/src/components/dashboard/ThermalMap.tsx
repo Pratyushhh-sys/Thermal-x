@@ -127,23 +127,42 @@ export const ThermalMap: React.FC = () => {
     if (mapInstance) mapInstance.zoomOut();
   };
 
+  // Enable Ctrl+Wheel zoom like Google Maps without hijacking normal page scroll
+  useEffect(() => {
+    if (!mapInstance) return;
+    const container = mapInstance.getContainer();
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          mapInstance.zoomIn();
+        } else if (e.deltaY > 0) {
+          mapInstance.zoomOut();
+        }
+      }
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, [mapInstance]);
+
   return (
-    <div className="relative w-full h-[540px] lg:h-[610px] rounded-2xl overflow-hidden border border-slate-100 premium-shadow bg-slate-900">
+    <div className="relative isolate z-0 w-full h-[540px] lg:h-[610px] rounded-2xl overflow-hidden border border-slate-200/80 shadow-md bg-slate-900">
       
       {/* Real Leaflet Satellite Interactive Map */}
       <MapContainer
         center={mapCenter}
         zoom={mapZoom}
         zoomControl={false}
-        scrollWheelZoom={true}
+        scrollWheelZoom={false}
+        doubleClickZoom={true}
         className="w-full h-full"
         ref={setMapInstance}
         maxBounds={[
-          [6.5, 68.0], // South West
-          [37.5, 97.5] // North East
+          [2.0, 58.0], // South West (allows smooth zoom out without harsh clipping)
+          [40.0, 105.0] // North East
         ]}
-        maxBoundsViscosity={1.0}
-        minZoom={4}
+        maxBoundsViscosity={0.6}
+        minZoom={3}
       >
         {/* Base tile layer — Esri World Street Map (Clean, no API key needed) */}
         {!useSatellite && (
@@ -181,19 +200,37 @@ export const ThermalMap: React.FC = () => {
         {/* Programmatic fly-to controller */}
         <MapController center={mapCenter} zoom={mapZoom} />
 
-        {/* Thermal Event Hotspot Markers — BUG-10: cap at 300 to prevent DOM jank */}
-        {mapLayers.thermalEvents && filteredEvents.slice(0, 300).map(ev => (
-          <Marker
-            key={ev.id}
-            position={[ev.lat, ev.lng]}
-            icon={createCustomMarker(ev, selectedEvent?.id === ev.id)}
-            eventHandlers={{
-              click: () => {
-                selectEventById(ev.id);
-              }
+        {/* Pipelines Layer matching Reference Image 2 connected lines */}
+        {mapLayers.pipelines && pipelines.map(pipe => (
+          <Polyline
+            key={pipe.id}
+            positions={pipe.points}
+            pathOptions={{
+              color: '#F59E0B',
+              weight: 2.5,
+              dashArray: '5, 8',
+              opacity: 0.85
             }}
           />
         ))}
+
+        {/* Thermal Event Hotspot Markers — BUG-10: cap at 300 to prevent DOM jank */}
+        {mapLayers.thermalEvents && filteredEvents.slice(0, 300).map(ev => {
+          const isSelected = selectedEvent?.id === ev.id;
+          return (
+            <Marker
+              key={ev.id}
+              position={[ev.lat, ev.lng]}
+              icon={createCustomMarker(ev, isSelected)}
+              zIndexOffset={isSelected ? 1000 : 0}
+              eventHandlers={{
+                click: () => {
+                  selectEventById(ev.id);
+                }
+              }}
+            />
+          );
+        })}
       </MapContainer>
 
       {/* FLOATING OVERLAY: Top Left Search On Map matching Reference Image 2 */}
@@ -216,15 +253,15 @@ export const ThermalMap: React.FC = () => {
       <div className="absolute top-4 right-4 z-[1000] flex flex-col space-y-1.5">
         <button
           onClick={zoomIn}
-          className="w-8 h-8 rounded-md bg-white hover:bg-slate-50 text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition-colors font-bold text-base"
-          title="Zoom in"
+          className="w-8 h-8 rounded-md bg-white hover:bg-slate-50 text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition-colors font-bold text-base cursor-pointer"
+          title="Zoom in (+ or Ctrl + Scroll)"
         >
           <Plus className="w-4 h-4" />
         </button>
         <button
           onClick={zoomOut}
-          className="w-8 h-8 rounded-md bg-white hover:bg-slate-50 text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition-colors font-bold text-base"
-          title="Zoom out"
+          className="w-8 h-8 rounded-md bg-white hover:bg-slate-50 text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition-colors font-bold text-base cursor-pointer"
+          title="Zoom out (- or Ctrl + Scroll)"
         >
           <Minus className="w-4 h-4" />
         </button>

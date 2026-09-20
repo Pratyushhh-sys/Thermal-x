@@ -1,0 +1,19 @@
+{
+  "total_firms_events": 1164,
+  "matched_events": 0,
+  "unmatched_events": 1164,
+  "match_percentage": 0.0,
+  "average_temporal_difference_mins": 639633.61,
+  "average_spatial_distance_km": 10.26,
+  "available_variables": [
+    "t2m",
+    "u10",
+    "v10",
+    "sp",
+    "tcc"
+  ],
+  "min_temp_c": NaN,
+  "max_temp_c": NaN,
+  "min_wind_speed": NaN,
+  "max_wind_speed": NaN
+}

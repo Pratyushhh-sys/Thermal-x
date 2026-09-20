@@ -17,10 +17,14 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from backend.services.facility_service import resolve_facility_name
+
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-FEATURES_CSV = PROJECT_ROOT / "data" / "features" / "source_classification_features.csv"
+FEATURES_CSV_ORIGINAL = PROJECT_ROOT / "data" / "features" / "source_classification_features.csv"
+FEATURES_CSV_WEATHER = PROJECT_ROOT / "data" / "processed" / "firms_weather_enriched.csv"
+FEATURES_CSV = FEATURES_CSV_WEATHER if FEATURES_CSV_WEATHER.exists() else FEATURES_CSV_ORIGINAL
 OBS_WINDOW_JSON = PROJECT_ROOT / "data" / "raw" / "obs_window.json"
 
 
@@ -124,6 +128,17 @@ class EventService:
         if max_frp is not None:
             df = df[df["frp"] <= max_frp]
 
+        # Prioritize highest intensity (and thus highest risk) events
+        if "frp" in df.columns:
+            df = df.sort_values(by="frp", ascending=False)
+            
+            # Spatial decluttering: Ensure even distribution by picking only the highest 
+            # FRP event per ~11km grid cell (1 decimal degree)
+            df["lat_grid"] = df["latitude"].round(1)
+            df["lon_grid"] = df["longitude"].round(1)
+            df = df.drop_duplicates(subset=["lat_grid", "lon_grid"], keep="first")
+            df = df.drop(columns=["lat_grid", "lon_grid"])
+
         df = df.iloc[offset: offset + limit]
 
         if raw_rows:
@@ -211,20 +226,27 @@ class EventService:
         proxy_score = _safe_float(row.get("_risk_score"), 0.0)
         days = int(row.get("active_days_last_7", 0) or 0)
 
+        lat = _safe_float(row.get("latitude"))
+        lon = _safe_float(row.get("longitude"))
+        source_label = row.get("source_label")
+        fac_info = resolve_facility_name(lat, lon, source_label)
+
         return {
             "id": row.get("event_id"),
             "location": {
-                "lat": _safe_float(row.get("latitude")),
-                "lon": _safe_float(row.get("longitude")),
+                "lat": lat,
+                "lon": lon,
             },
             "frp": frp_val,
             "acq_date": str(row.get("acq_date")) if row.get("acq_date") else None,
-            "source_label": row.get("source_label"),
+            "source_label": source_label,
             "active_days_last_7": days,
             "satellite": str(sat_raw) if sat_raw else None,
             "day_night": day_night_str,
             "risk_tier": risk_tier,    # BUG-B01: pre-computed, no ML needed
             "risk_score": proxy_score, # BUG-B01: proxy score for list view
+            "candidate_source": fac_info["name"],
+            "candidate_type": fac_info["type"],
         }
 
     def _assert_loaded(self) -> None:
