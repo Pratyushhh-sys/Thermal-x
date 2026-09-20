@@ -11,54 +11,58 @@ export const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
-        <ThermalProvider>
-          <Routes>
-            {/* Public Landing Page matching Reference Image 1 */}
-            <Route path="/" element={<LandingPage />} />
+        <Routes>
+          {/* Public Landing Page */}
+          <Route path="/" element={<LandingPage />} />
 
-            {/* Official Login Route */}
-            <Route path="/login" element={<LoginPage />} />
+          {/* Official Login Route */}
+          <Route path="/login" element={<LoginPage />} />
 
-            {/* Protected Authenticated Dashboard Route matching Reference Image 2 */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
+          {/* Protected routes: ThermalProvider only mounts AFTER auth — BUG-15 */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <ThermalProvider>
                   <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
+                </ThermalProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <ThermalProvider>
+                  <DashboardPage />
+                </ThermalProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <ThermalProvider>
+                  <DashboardPage />
+                </ThermalProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/attribution"
+            element={
+              <ProtectedRoute>
+                <ThermalProvider>
+                  <DashboardPage />
+                </ThermalProvider>
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Auxiliary shortcuts that map directly to the dashboard features */}
-            <Route
-              path="/events"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/attribution"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </ThermalProvider>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </AuthProvider>
     </Router>
   );

@@ -73,19 +73,21 @@ def extract_persistence_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
     active_days  = _safe_int(row.get("active_days_last_7"), 0)
     pers_ratio   = _safe_float(row.get("persistence_ratio"), 0.0)
     obs_count    = _safe_int(row.get("observation_count_last_7"), 0)
-    avg_frp      = _safe_float(row.get("avg_frp"), None)   # type: ignore[arg-type]
-    max_frp      = _safe_float(row.get("max_frp"), None)   # type: ignore[arg-type]
-    min_frp      = _safe_float(row.get("min_frp"), None)   # type: ignore[arg-type]
+    # BUG-B07: _safe_float signature is (val, default: float). Passing None caused
+    # a type mismatch and potential round(None) crash if obs_count check was skipped.
+    # Use 0.0 as safe sentinel; override to None below when obs_count == 0.
+    avg_frp      = _safe_float(row.get("avg_frp"), 0.0)
+    max_frp      = _safe_float(row.get("max_frp"), 0.0)
+    min_frp      = _safe_float(row.get("min_frp"), 0.0)
     frp_trend    = _safe_float(row.get("frp_trend"), 0.0)
     frp_std      = _safe_float(row.get("frp_std"), 0.0)
     night_count  = _safe_int(row.get("night_count"), 0)
     day_count    = _safe_int(row.get("day_count"), 0)
 
-    # Handle sentinel NaN for avg/max/min when obs_count == 0
-    if obs_count == 0:
-        avg_frp = None
-        max_frp = None
-        min_frp = None
+    # When obs_count == 0, all FRP stats are meaningless — return None
+    avg_frp_out = round(avg_frp, 2) if obs_count > 0 else None
+    max_frp_out = round(max_frp, 2) if obs_count > 0 else None
+    min_frp_out = round(min_frp, 2) if obs_count > 0 else None
 
     trend = _trend_label(active_days, frp_trend)
 
@@ -93,9 +95,9 @@ def extract_persistence_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "active_days_last_7": active_days,
         "persistence_ratio": round(pers_ratio, 4),
         "observation_count_last_7": obs_count,
-        "avg_frp": round(avg_frp, 2) if avg_frp is not None else None,
-        "max_frp": round(max_frp, 2) if max_frp is not None else None,
-        "min_frp": round(min_frp, 2) if min_frp is not None else None,
+        "avg_frp": avg_frp_out,  # BUG-B07: already rounded safely above
+        "max_frp": max_frp_out,
+        "min_frp": min_frp_out,
         "frp_trend": round(frp_trend, 4),
         "frp_std": round(frp_std, 4),
         "night_count": night_count,

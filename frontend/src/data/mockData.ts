@@ -6,10 +6,11 @@ export interface ThermalEvent {
   lat: number;
   lng: number;
   risk: 'High' | 'Medium' | 'Low';
-  probableSource: 'Industrial' | 'Pipeline' | 'Power Plant' | 'Settlement';
+  riskScore?: number;
+  probableSource: 'Agricultural' | 'Forest' | 'Industrial' | 'Mining' | 'Other' | 'Pipeline' | 'Power Plant' | 'Settlement' | 'Unknown' | string;
   confidence: number;
   detectedOn: string;
-  status: 'In Progress' | 'Under Review' | 'Investigating' | 'Resolved';
+  status: 'In Progress' | 'Under Review' | 'Investigating' | 'Resolved' | 'Not Assessed';
   frp: string; // Fire Radiative Power
   intensity: string;
   sensor: string;
@@ -22,8 +23,10 @@ export interface ThermalEvent {
   attributionReasoning: string;
   windSpeed: string;
   plumeDirection: string;
-  markerType: 'fire-red' | 'fire-orange' | 'warning-red' | 'factory-blue' | 'check-green';
+  markerType: 'fire-red' | 'fire-orange' | 'warning-red' | 'factory-blue' | 'check-green' | 'forest-green' | 'agri-yellow' | 'mine-purple';
   mapLabel?: string;
+  // Full backend event detail response — populated when user selects this event
+  rawDetail?: any;
 }
 
 export interface IndustrialFacility {
@@ -45,8 +48,11 @@ export interface PipelineTrack {
 export interface NotificationItem {
   id: string;
   title: string;
-  description: string;
-  time: string;
+  // Support both backend shape (message/timestamp) and legacy shape (description/time)
+  description?: string;
+  message?: string;
+  time?: string;
+  timestamp?: string;
   type: 'urgent' | 'info' | 'warning';
   read: boolean;
   eventId?: string;

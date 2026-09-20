@@ -45,7 +45,7 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
   };
 
   return (
-    <section id="official-login-section" className="py-12 lg:py-16 bg-[#F1F5F9]/60">
+    <section id="official-login-section" className="py-12 lg:py-16 bg-white border-t border-slate-100">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Downward indicator arrow matching Reference Image 1 transition */}
@@ -67,10 +67,10 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
           <div className="md:col-span-6 p-8 sm:p-10 lg:p-12 flex flex-col justify-center bg-white">
             
             <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#0F284E] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Official Login
               </h2>
-              <p className="text-sm text-slate-500 mt-1 font-normal">
+              <p className="text-sm text-slate-500 mt-1 font-medium">
                 Access the Thermal X platform
               </p>
             </div>
@@ -98,7 +98,7 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="official@thermalx.gov.in"
-                    className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0F284E]/20 focus:border-[#0F284E] transition-all bg-slate-50/50 hover:bg-white text-slate-800"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50 hover:bg-white text-slate-800"
                   />
                 </div>
               </div>
@@ -117,7 +117,7 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0F284E]/20 focus:border-[#0F284E] transition-all bg-slate-50/50 hover:bg-white text-slate-800"
+                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50 hover:bg-white text-slate-800"
                   />
                   <button
                     type="button"
@@ -133,7 +133,7 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 bg-[#0F284E] hover:bg-[#173A6E] text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center space-x-2 text-sm disabled:opacity-75 cursor-pointer"
+                className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold py-3 px-4 rounded-xl premium-shadow flex items-center justify-center space-x-2 text-sm disabled:opacity-75 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -146,11 +146,11 @@ export const OfficialLogin: React.FC<OfficialLoginProps> = ({ onForgotPasswordCl
               </button>
 
               {/* Forgot Password Link */}
-              <div className="text-center pt-2">
+              <div className="text-center pt-3">
                 <button
                   type="button"
                   onClick={onForgotPasswordClick}
-                  className="text-xs text-[#0284C7] hover:text-[#0369A1] font-medium hover:underline transition-colors"
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium hover:underline transition-colors"
                 >
                   Forgot Password?
                 </button>

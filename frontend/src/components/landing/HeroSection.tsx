@@ -23,7 +23,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="lg:col-span-6 flex flex-col justify-center text-left">
             
             {/* Eyebrow text matching Reference Image 1 */}
-            <div className="text-xs sm:text-[13px] font-bold tracking-[0.2em] text-[#2563EB] uppercase mb-4 flex items-center space-x-2">
+            <div className="text-xs sm:text-[13px] font-bold tracking-[0.2em] text-teal-600 uppercase mb-4 flex items-center space-x-2">
               <span>MONITOR</span>
               <span>•</span>
               <span>ANALYZE</span>
@@ -34,9 +34,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
 
             {/* Main Heading matching Reference Image 1 */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0B2447] tracking-tight leading-[1.15] mb-5">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-6">
               Detect Thermal Risks. <br />
-              Enable <span className="text-[#0284C7]">Safer Communities.</span>
+              Enable <span className="text-gradient">Safer Communities.</span>
             </h1>
 
             {/* Supporting paragraph text matching Reference Image 1 */}
@@ -51,7 +51,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               
               {/* Feature 1 */}
               <div className="flex items-center space-x-2.5">
-                <div className="w-10 h-10 rounded-full border border-slate-300 bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl border border-slate-100 bg-white flex items-center justify-center flex-shrink-0 premium-shadow text-indigo-600">
                   <Flame className="w-5 h-5 text-[#0F284E]" />
                 </div>
                 <div className="text-[11px] font-semibold text-slate-700 leading-tight">
@@ -62,7 +62,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Feature 2 */}
               <div className="flex items-center space-x-2.5">
-                <div className="w-10 h-10 rounded-full border border-slate-300 bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl border border-slate-100 bg-white flex items-center justify-center flex-shrink-0 premium-shadow text-indigo-600">
                   <Factory className="w-5 h-5 text-[#0F284E]" />
                 </div>
                 <div className="text-[11px] font-semibold text-slate-700 leading-tight">
@@ -73,7 +73,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Feature 3 */}
               <div className="flex items-center space-x-2.5">
-                <div className="w-10 h-10 rounded-full border border-slate-300 bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl border border-slate-100 bg-white flex items-center justify-center flex-shrink-0 premium-shadow text-indigo-600">
                   <MapPin className="w-5 h-5 text-[#0F284E]" />
                 </div>
                 <div className="text-[11px] font-semibold text-slate-700 leading-tight">
@@ -84,7 +84,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Feature 4 */}
               <div className="flex items-center space-x-2.5">
-                <div className="w-10 h-10 rounded-full border border-slate-300 bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl border border-slate-100 bg-white flex items-center justify-center flex-shrink-0 premium-shadow text-indigo-600">
                   <FileText className="w-5 h-5 text-[#0F284E]" />
                 </div>
                 <div className="text-[11px] font-semibold text-slate-700 leading-tight">
@@ -96,10 +96,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
 
             {/* Hero Buttons matching Reference Image 1 */}
-            <div className="flex flex-wrap items-center gap-4 mb-10">
+            <div className="flex flex-wrap items-center gap-4 mb-12">
               <button
                 onClick={onLoginClick}
-                className="inline-flex items-center space-x-2 bg-[#0F284E] hover:bg-[#173A6E] text-white text-sm font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 group"
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold px-7 py-3.5 rounded-xl premium-shadow group"
               >
                 <span>Login as Government Official</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -107,10 +107,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               <button
                 onClick={onLearnMoreClick}
-                className="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold px-5 py-3 rounded-lg shadow-sm hover:shadow transition-all duration-200 group"
+                className="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-sm font-semibold px-7 py-3.5 rounded-xl premium-shadow group"
               >
                 <span>Learn More</span>
-                <ChevronDown className="w-4 h-4 text-slate-500 transition-transform duration-200 group-hover:translate-y-0.5" />
+                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform duration-200 group-hover:translate-y-0.5" />
               </button>
             </div>
 

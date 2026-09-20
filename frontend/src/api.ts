@@ -27,3 +27,9 @@ export async function fetchNotifications() {
   if (!response.ok) throw new Error('Failed to fetch notifications');
   return response.json();
 }
+
+export async function fetchHealth() {
+  const response = await fetch(`${API_BASE_URL}/health`);
+  if (!response.ok) throw new Error('Failed to fetch health');
+  return response.json();
+}

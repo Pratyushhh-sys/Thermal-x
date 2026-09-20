@@ -13,7 +13,7 @@ export const DashboardHeader: React.FC = () => {
         </div>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0B2447] tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
             Thermal Intelligence & Risk Monitoring
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
@@ -25,7 +25,7 @@ export const DashboardHeader: React.FC = () => {
       {/* Right Slogan with Satellite graphic matching Reference Image 2 */}
       <div className="hidden md:flex items-center space-x-3 text-right">
         <div className="text-xs font-semibold text-slate-500">
-          From Space <span className="text-slate-400">→</span> <span className="text-[#0F284E] font-bold">To Safer Tomorrow</span>
+          From Space <span className="text-slate-400">→</span> <span className="text-indigo-600 font-bold">To Safer Tomorrow</span>
         </div>
         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
           <Satellite className="w-4 h-4" />

@@ -17,6 +17,7 @@ The full intelligence pipeline for a single event:
 import logging
 from typing import List, Optional
 
+import numpy as np  # BUG-B13: moved from inside _opt_float to top-level
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
@@ -76,48 +77,21 @@ async def list_events(
         satellite_filter=satellite,
         min_frp=min_frp,
         max_frp=max_frp,
-        raw_rows=True,
+        raw_rows=False,  # BUG-B04: use _row_to_list_item directly, not raw+convert again
     )
 
+    # BUG-B01: list items already have risk_tier/risk_score pre-computed — no ML needed
     items = []
-    for r in rows:
+    skipped = 0  # BUG-B11: track failures
+    for item_dict in rows:
         try:
-            # Basic fields
-            item_dict = event_svc._row_to_list_item(pd.Series(r))
-            
-            # Compute ML / Risk on the fly for the page
-            lat = float(r.get("latitude", 0))
-            lon = float(r.get("longitude", 0))
-            frp = float(r.get("frp", 0) or 0)
-            
-            # Classification
-            clf = classify_event(r, model_svc)
-            pred_c = clf["thermal_only_estimate"]
-            item_dict["source_label"] = pred_c["source"] # Use ML prediction for probable source
-            
-            # Persistence & OSM for Risk
-            pers_dict = extract_persistence_from_row(r)
-            try:
-                osm_dict = osm_svc.get_osm_context(lat, lon)
-            except Exception:
-                osm_dict = {}
-                
-            nearest_htype = _nearest_hazard_type(osm_dict)
-            risk_dict = compute_risk(
-                frp=frp,
-                active_days_last_7=pers_dict["active_days_last_7"],
-                nearest_hazard_distance_m=osm_dict.get("nearest_hazard_distance_m"),
-                classification_confidence=pred_c["confidence"],
-                predicted_source=pred_c["source"],
-                nearest_hazard_type=nearest_htype,
-            )
-            
-            item_dict["risk_tier"] = risk_dict["tier"]
-            item_dict["risk_score"] = risk_dict["score"]
-
             items.append(EventListItem(**item_dict))
         except Exception as exc:
-            logger.warning("Could not serialize event %s: %s", r.get("event_id"), exc)
+            skipped += 1
+            logger.warning("Could not serialize event %s: %s", item_dict.get("id"), exc)
+
+    if skipped:
+        logger.warning("list_events: skipped %d events due to serialization errors", skipped)  # BUG-B11
     return items
 
 
@@ -191,6 +165,11 @@ async def get_event(event_id: str, request: Request) -> EventResponse:
     )
 
     # --- 7. Assemble response ---
+    # BUG-B02: get real obs_window from service instead of hardcoded string
+    obs = event_svc.obs_window()
+    obs_window_str = (
+        f"{obs.get('obs_start', '?')} to {obs.get('obs_end', '?')} ({obs.get('obs_days', '?')} days)"
+    )
     return _build_response(
         event_id=event_id,
         row=row,
@@ -201,6 +180,7 @@ async def get_event(event_id: str, request: Request) -> EventResponse:
         pred_a=pred_a,
         risk_dict=risk_dict,
         reasons=reasons,
+        obs_window=obs_window_str,
     )
 
 
@@ -277,9 +257,8 @@ def _day_night_str(row: dict) -> Optional[str]:
 def _build_response(
     event_id, row, lat, lon, frp,
     pers_dict, osm_dict, pred_c, pred_a,
-    risk_dict, reasons,
+    risk_dict, reasons, obs_window: str,  # BUG-B02: passed in, not hardcoded
 ) -> EventResponse:
-    obs_window = "2026-08-24 to 2026-09-18 (26 days)"
 
     return EventResponse(
         id=event_id,
@@ -343,10 +322,10 @@ def _build_response(
 
 
 def _opt_float(val) -> Optional[float]:
+    """BUG-B13: numpy is now imported at top level, not inside this function."""
     if val is None:
         return None
     try:
-        import numpy as np
         f = float(val)
         return None if (isinstance(f, float) and np.isnan(f)) else f
     except (ValueError, TypeError):

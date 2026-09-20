@@ -18,20 +18,22 @@ Or from project root:
   python -m uvicorn backend.main:app --reload --port 8000
 """
 
+import asyncio
 import logging
 import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Allow importing project root modules (ml/, backend/)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.api import events, health, summary, notifications
+from backend.api import events, health, summary, notifications, imagery, system
 from backend.services.model_service import model_service
 from backend.services.event_service import event_service
 from backend.services.osm_service import osm_service
@@ -44,6 +46,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 FIRMS_BBOX = os.getenv("FIRMS_BBOX", "67,6,98,37")
+
+# BUG-B12: Allow origin list from env (never use wildcard + credentials)
+_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:3000,http://localhost:4173",
+    ).split(",")
+    if o.strip()
+]
+
+# BUG-B12: Limit concurrent expensive requests (each GET /api/events runs ML inference)
+_CONCURRENCY_LIMIT = int(os.getenv("API_CONCURRENCY", "4"))
+_request_semaphore: asyncio.Semaphore  # initialised in lifespan
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +94,10 @@ async def lifespan(app: FastAPI):
     app.state.model_service = model_service
     app.state.event_service = event_service
     app.state.osm_service   = osm_service
+
+    # BUG-B12: initialise the concurrency semaphore
+    global _request_semaphore
+    _request_semaphore = asyncio.Semaphore(_CONCURRENCY_LIMIT)
 
     logger.info("-" * 60)
     logger.info("  Model:   Exp C (%d features) + Exp A (%d features)",
@@ -119,14 +139,27 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS — allow all origins during development
+# BUG-B03: Do NOT combine allow_credentials=True with allow_origins=["*"].
+# That violates the CORS spec and browsers will block such responses.
+# Use explicit origin list from environment instead.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "OPTIONS", "POST"],
     allow_headers=["*"],
 )
+
+
+# BUG-B12: Middleware to reject requests when the server is already at capacity
+@app.middleware("http")
+async def concurrency_limit_middleware(request: Request, call_next):
+    if not await _request_semaphore.acquire.__func__(_request_semaphore):
+        return JSONResponse(status_code=503, content={"detail": "Server busy, retry shortly"})
+    try:
+        return await call_next(request)
+    finally:
+        _request_semaphore.release()
 
 # ---------------------------------------------------------------------------
 # Routers
@@ -135,7 +168,8 @@ app.include_router(health.router, prefix="/api")
 app.include_router(summary.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
-
+app.include_router(imagery.router, prefix="/api")
+app.include_router(system.router, prefix="/api")
 
 @app.get("/", tags=["Root"])
 async def root():

@@ -3,10 +3,10 @@ import { Factory, Flame, Zap, CheckCircle2, Clock, AlertCircle } from 'lucide-re
 import { useThermal } from '../../context/ThermalContext';
 
 export const RecentInvestigations: React.FC = () => {
-  const { events, selectedEvent, selectEventById, setActiveModal } = useThermal();
+  const { filteredEvents, selectedEvent, selectEventById, setActiveModal } = useThermal();
 
   // Show top 4 investigations matching Reference Image 2
-  const recentEvents = events.slice(0, 4);
+  const recentEvents = filteredEvents.slice(0, 4);
 
   const getSourceIcon = (source: string) => {
     switch (source) {
@@ -80,7 +80,7 @@ export const RecentInvestigations: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mt-5">
+    <div className="glass-card p-4 sm:p-5 premium-shadow">
       
       {/* Header matching Reference Image 2 */}
       <div className="flex items-center justify-between mb-3">
@@ -89,7 +89,7 @@ export const RecentInvestigations: React.FC = () => {
         </h2>
         <button
           onClick={() => setActiveModal('explore')}
-          className="text-xs font-semibold text-[#0284C7] hover:text-[#0369A1] flex items-center space-x-1 group"
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center space-x-1 group"
         >
           <span>View All</span>
           <span className="group-hover:translate-x-0.5 transition-transform">→</span>

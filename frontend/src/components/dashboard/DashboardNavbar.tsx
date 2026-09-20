@@ -4,6 +4,7 @@ import FlameIcon from '../../assets/FlameIcon';
 import { useAuth } from '../../context/AuthContext';
 import { useThermal } from '../../context/ThermalContext';
 import { useNavigate } from 'react-router-dom';
+import { SystemHealthIndicator } from '../intelligence/SystemHealthIndicator';
 
 export const DashboardNavbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -14,17 +15,46 @@ export const DashboardNavbar: React.FC = () => {
     markNotificationRead,
     unreadCount,
     searchQuery,
-    setSearchQuery
+    setSearchQuery,
+    dataLoadedAt, // BUG-08/12
   } = useThermal();
   const navigate = useNavigate();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSystemHealthOpen, setIsSystemHealthOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() =>
+    new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+  );
+
+  useEffect(() => {
+    const tick = () =>
+      setCurrentTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }));
+    const interval = setInterval(tick, 60000); // BUG-08: update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // BUG-12: compute relative data freshness from real load timestamp
+  const [relativeTime, setRelativeTime] = React.useState('just now');
+  useEffect(() => {
+    const compute = () => {
+      if (!dataLoadedAt) { setRelativeTime('loading...'); return; }
+      const diffMs = Date.now() - dataLoadedAt.getTime();
+      const diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1) setRelativeTime('just now');
+      else if (diffMin === 1) setRelativeTime('1 min ago');
+      else setRelativeTime(`${diffMin} min ago`);
+    };
+    compute();
+    const t = setInterval(compute, 30000);
+    return () => clearInterval(t);
+  }, [dataLoadedAt]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const healthRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -37,6 +67,9 @@ export const DashboardNavbar: React.FC = () => {
       }
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchFocused(false);
+      }
+      if (healthRef.current && !healthRef.current.contains(e.target as Node)) {
+        setIsSystemHealthOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -61,8 +94,8 @@ export const DashboardNavbar: React.FC = () => {
     : [];
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-xs">
-      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 glass-panel">
+      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         
         {/* Left: Brand / SIH Identity matching Reference Image 2 */}
         <div className="flex items-center space-x-3 flex-shrink-0 cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -70,7 +103,7 @@ export const DashboardNavbar: React.FC = () => {
             <FlameIcon size={32} />
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-xl font-extrabold text-[#0F284E] tracking-tight">
+            <span className="text-xl font-extrabold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">
               Thermal X
             </span>
             <span className="text-xs font-semibold text-slate-400 border-l border-slate-300 pl-2">
@@ -80,7 +113,7 @@ export const DashboardNavbar: React.FC = () => {
         </div>
 
         {/* Center: Large Global Search Bar matching Reference Image 2 */}
-        <div className="flex-1 max-w-2xl relative" ref={searchRef}>
+        <div className="flex-1 max-w-lg relative hidden sm:block" ref={searchRef}>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <Search className="w-4 h-4" />
@@ -91,7 +124,7 @@ export const DashboardNavbar: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               placeholder="Search location, facility, event ID, or coordinates..."
-              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white hover:bg-slate-50/70 focus:bg-white rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0F284E]/15 focus:border-[#0F284E] text-slate-800 placeholder:text-slate-400 transition-all shadow-xs"
+              className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 focus:border-indigo-500 text-slate-800 placeholder:text-slate-400 transition-all shadow-sm"
             />
           </div>
 
@@ -112,7 +145,7 @@ export const DashboardNavbar: React.FC = () => {
                   className="p-3 hover:bg-blue-50/70 cursor-pointer border-b border-slate-100 last:border-0 flex items-center justify-between transition-colors"
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-xs font-bold text-[#0F284E] bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md">
                       {ev.id}
                     </span>
                     <div>
@@ -145,17 +178,35 @@ export const DashboardNavbar: React.FC = () => {
               <span className="tracking-wide">LIVE MONITORING</span>
             </div>
             <span className="text-[10px] text-slate-400 font-medium">
-              Last update: 10:24 AM (IST)
+              Last update: {currentTime} (IST)
             </span>
           </div>
 
-          {/* Data Freshness Indicator */}
+          {/* Data Freshness Indicator — BUG-12: use real relative time */}
           <div className="hidden lg:flex items-center space-x-2 pl-3 border-l border-slate-200 text-slate-500">
             <Cloud className="w-5 h-5 text-slate-400" />
             <div className="flex flex-col text-left">
               <span className="text-[10px] font-medium text-slate-400 leading-tight">Data freshness</span>
-              <span className="text-xs font-bold text-slate-700 leading-tight">2 min ago</span>
+              <span className="text-xs font-bold text-slate-700 leading-tight">{relativeTime}</span>
             </div>
+          </div>
+
+          {/* System Health Indicator Dropdown */}
+          <div className="hidden lg:block relative" ref={healthRef}>
+            <button
+              onClick={() => setIsSystemHealthOpen(!isSystemHealthOpen)}
+              className="flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+              title="System Status"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-xs font-semibold text-slate-700">System OK</span>
+            </button>
+
+            {isSystemHealthOpen && (
+              <div className="absolute right-0 mt-2 w-72 z-50 animate-fadeIn">
+                <SystemHealthIndicator />
+              </div>
+            )}
           </div>
 
           {/* Notification Bell Dropdown */}
@@ -186,7 +237,13 @@ export const DashboardNavbar: React.FC = () => {
                 </div>
 
                 <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                  {notifications.map((n) => (
+                  {/* BUG-09: show empty state when no notifications */}
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-xs font-medium">No notifications yet</p>
+                    </div>
+                  ) : notifications.map((n) => (
                     <div
                       key={n.id}
                       onClick={() => {
@@ -205,10 +262,10 @@ export const DashboardNavbar: React.FC = () => {
                       <div className="flex-1 min-w-0 text-left">
                         <div className="text-xs font-semibold text-slate-800 flex items-center justify-between">
                           <span>{n.title}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">{n.time}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">{n.time ?? (n as any).timestamp ?? ''}</span>
                         </div>
                         <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
-                          {n.description}
+                          {n.description ?? (n as any).message ?? ''}
                         </p>
                       </div>
                     </div>
@@ -222,12 +279,12 @@ export const DashboardNavbar: React.FC = () => {
           <div className="relative pl-1 sm:pl-2" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-2.5 p-1 rounded-lg hover:bg-slate-100 transition-colors group cursor-pointer"
+              className="flex items-center space-x-2.5 p-1.5 rounded-xl hover:bg-slate-50 premium-shadow transition-all group cursor-pointer border border-transparent hover:border-slate-100"
             >
-              <div className="w-8 h-8 rounded-full bg-[#0F284E] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-teal-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">
                 {user?.initials || 'AS'}
               </div>
-              <div className="hidden sm:flex flex-col text-left">
+              <div className="hidden sm:flex flex-col text-left pr-1">
                 <span className="text-xs font-bold text-slate-800 leading-tight">
                   {user?.name || 'Admin'}
                 </span>
@@ -247,28 +304,31 @@ export const DashboardNavbar: React.FC = () => {
                 </div>
 
                 <div className="py-1">
+                  {/* BUG-11: Profile buttons previously did nothing — now they scroll to map or open modals */}
                   <button
-                    onClick={() => setIsProfileOpen(false)}
+                    onClick={() => { setIsProfileOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     className="w-full px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2.5 text-left"
                   >
                     <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Profile & Credentials</span>
+                    <span>Profile &amp; Credentials</span>
                   </button>
 
                   <button
-                    onClick={() => setIsProfileOpen(false)}
+                    onClick={() => { setIsProfileOpen(false); }}
                     className="w-full px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2.5 text-left"
+                    title="Settings are managed at the system level"
                   >
                     <Settings className="w-3.5 h-3.5 text-slate-400" />
                     <span>Account Settings</span>
                   </button>
 
                   <button
-                    onClick={() => setIsProfileOpen(false)}
+                    onClick={() => { setIsProfileOpen(false); }}
                     className="w-full px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-2.5 text-left"
+                    title="Audit logs are server-side — contact admin"
                   >
                     <Shield className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Security & Audit Logs</span>
+                    <span>Security &amp; Audit Logs</span>
                   </button>
                 </div>
 

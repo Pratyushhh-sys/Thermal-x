@@ -13,7 +13,7 @@ import SourceAttributionModal from '../components/modals/SourceAttributionModal'
 
 export const DashboardPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex flex-col antialiased">
+    <div className="min-h-screen bg-transparent flex flex-col antialiased">
       {/* Top Dashboard Navbar matching Reference Image 2 */}
       <DashboardNavbar />
 
@@ -35,7 +35,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* RIGHT: Selected Event & Recent Investigations (Col 8/9 to 12) */}
-          <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col">
+          <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col gap-5 h-[540px] lg:h-[610px] overflow-y-auto pr-2 pb-2">
             <SelectedEventPanel />
             <RecentInvestigations />
           </div>

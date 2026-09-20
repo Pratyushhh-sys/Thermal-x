@@ -99,8 +99,9 @@ def compute_risk(
     dict with score, tier, components{thermal, persistence, osm, ai}, weights
     """
     # --- Component scores ---
-    thermal_score = min(100.0, (frp / 150.0) * 100.0)
-    persistence_score = (active_days_last_7 / 7.0) * 100.0
+    # Adjusted scales to prevent artificial deflation (60 MW is a large fire; 4 days is highly persistent)
+    thermal_score = min(100.0, (frp / 60.0) * 100.0)
+    persistence_score = min(100.0, (active_days_last_7 / 4.0) * 100.0)
     osm_score = _osm_score_from_distance(nearest_hazard_distance_m)
     ai_score = classification_confidence * 100.0
 

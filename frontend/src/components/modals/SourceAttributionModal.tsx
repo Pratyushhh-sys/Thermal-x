@@ -1,11 +1,44 @@
 import React from 'react';
 import { X, BarChart3, Factory, CheckCircle2, ShieldCheck, ArrowRight, Activity, Crosshair } from 'lucide-react';
 import { useThermal } from '../../context/ThermalContext';
+import EvidenceBreakdownCard from '../intelligence/EvidenceBreakdownCard';
 
 export const SourceAttributionModal: React.FC = () => {
   const { selectedEvent, activeModal, setActiveModal, events, selectEventById } = useThermal();
 
   if (activeModal !== 'attribution') return null;
+
+  // Guard: need a selected event to show attribution
+  if (!selectedEvent) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs animate-fadeIn">
+        <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-[#0F284E] text-white p-5 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-white/10"><BarChart3 className="w-5 h-5" /></div>
+              <h3 className="text-lg font-bold">ML Source Attribution Engine</h3>
+            </div>
+            <button onClick={() => setActiveModal(null)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-10 text-center">
+            <Crosshair className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h4 className="text-base font-bold text-slate-800 mb-2">No Event Selected</h4>
+            <p className="text-sm text-slate-500 mb-6">Please select a thermal event from the map or the Explore Events table first, then open Attribution.</p>
+            <div className="flex justify-center gap-3">
+              <button onClick={() => setActiveModal('explore')} className="px-4 py-2 bg-[#0F284E] text-white text-xs font-semibold rounded-lg hover:bg-[#173A6E]">
+                Open Explore Events
+              </button>
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-fadeIn">
@@ -64,71 +97,8 @@ export const SourceAttributionModal: React.FC = () => {
           </div>
 
           {/* Explainability Feature Breakdown */}
-          <div>
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-              <Activity className="w-4 h-4 text-blue-600" />
-              <span>Attribution Feature Weight Decomposition (SHAP / Explainable AI)</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Feature 1: Spatial Proximity */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-700">1. Geospatial Proximity</span>
-                  <span className="font-bold text-blue-600">35% Weight (High)</span>
-                </div>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '92%' }}></div>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Anomaly origin is situated {selectedEvent.distanceToSource} from candidate stack boundary, well within the 2.5 km atmospheric boundary layer limit.
-                </p>
-              </div>
-
-              {/* Feature 2: Temporal Correlation */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-700">2. Temporal Flare Correlation</span>
-                  <span className="font-bold text-blue-600">25% Weight (Very High)</span>
-                </div>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: '91%' }}></div>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Satellite overpass thermal peak corresponds exactly with the plant operational telemetry surge recorded at {selectedEvent.temporalCorrelation}.
-                </p>
-              </div>
-
-              {/* Feature 3: Atmospheric Dispersion Plume */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-700">3. Atmospheric Dispersion Alignment</span>
-                  <span className="font-bold text-blue-600">20% Weight</span>
-                </div>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-cyan-500 h-full rounded-full" style={{ width: '88%' }}></div>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Observed heat plume vector ({selectedEvent.plumeDirection}) perfectly coincides with ERA5 surface wind vector ({selectedEvent.windSpeed}).
-                </p>
-              </div>
-
-              {/* Feature 4: Historical Occurrence */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-700">4. Historical Emission Baseline</span>
-                  <span className="font-bold text-blue-600">20% Weight</span>
-                </div>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-purple-500 h-full rounded-full" style={{ width: '84%' }}></div>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  {selectedEvent.historicalDetections}. Radiative power exceeds standard operating threshold by 240%.
-                </p>
-              </div>
-
-            </div>
+          <div className="mt-4">
+            <EvidenceBreakdownCard event={selectedEvent} />
           </div>
 
           {/* Model Reasoning Conclusion */}

@@ -59,6 +59,28 @@ class EventService:
         self._df = df
         logger.info("EventService loaded: %d events, %d columns", len(df), len(df.columns))
 
+        # BUG-B01: Pre-compute lightweight risk_tier and risk_score using FRP+persistence proxy
+        # This avoids running the full ML pipeline on every list request.
+        # Vectorized for fast load over 20k rows.
+        import numpy as np
+        frp_vals = df["frp"].fillna(0.0).astype(float) if "frp" in df.columns else np.zeros(len(df))
+        days = df["active_days_last_7"].fillna(0).astype(int) if "active_days_last_7" in df.columns else np.zeros(len(df))
+        
+        # Exact proxy math aligned with risk_service.py (Base 19.0 points for avg OSM + AI)
+        thermal = np.minimum(100.0, (frp_vals / 60.0) * 100.0)
+        persistence = np.minimum(100.0, (days / 4.0) * 100.0)
+        scores = np.round(0.30 * thermal + 0.30 * persistence + 19.0, 2)
+        df["_risk_score"] = scores
+        
+        conditions = [
+            (scores >= 70.0),
+            (scores >= 45.0)
+        ]
+        choices = ["HIGH", "MEDIUM"]
+        df["_risk_tier"] = np.select(conditions, choices, default="LOW")
+        self._df = df
+        logger.info("EventService loaded: %d events (risk tiers pre-computed)", len(df))
+
         # Load observation window metadata
         import json
         if OBS_WINDOW_JSON.exists():
@@ -86,7 +108,10 @@ class EventService:
     ) -> List[Dict[str, Any]]:
         """Return paginated event list with optional filters."""
         self._assert_loaded()
-        df = self._df.copy()
+
+        # BUG-B10: Only copy when we actually need to filter — avoids 15MB alloc on every request
+        needs_filter = any([source_filter, satellite_filter, min_frp is not None, max_frp is not None])
+        df = self._df.copy() if needs_filter else self._df
 
         if source_filter:
             df = df[df["source_label"].str.lower() == source_filter.lower()]
@@ -103,8 +128,14 @@ class EventService:
 
         if raw_rows:
             return [row.to_dict() for _, row in df.iterrows()]
-        
+
         return [self._row_to_list_item(row) for _, row in df.iterrows()]
+
+    def get_top_frp_rows(self, n: int = 10) -> List[Dict[str, Any]]:
+        """BUG-B05 fix: Return top-N rows by FRP across the entire dataset."""
+        self._assert_loaded()
+        top = self._df.nlargest(n, "frp")
+        return [row.to_dict() for _, row in top.iterrows()]
 
 
     def get_event_row(self, event_id: str) -> Dict[str, Any]:
@@ -136,6 +167,8 @@ class EventService:
         persistent = int((df["active_days_last_7"] >= 4).sum()) \
             if "active_days_last_7" in df.columns else 0
         high_frp = int((df["frp"] >= 50).sum()) if "frp" in df.columns else 0
+        # BUG-B06: add moderate bucket (15-49 MW) for accurate summary tiers
+        moderate_frp = int(((df["frp"] >= 15) & (df["frp"] < 50)).sum()) if "frp" in df.columns else 0
 
         return {
             "total_events": len(df),
@@ -144,6 +177,7 @@ class EventService:
             "max_frp": round(max_frp, 2),
             "persistent_events": persistent,
             "high_frp_events": high_frp,
+            "moderate_frp_events": moderate_frp,  # BUG-B06: new field
             "observation_window": (
                 f"{self._obs_window.get('obs_start', '?')} to "
                 f"{self._obs_window.get('obs_end', '?')} "
@@ -171,18 +205,26 @@ class EventService:
         else:
             day_night_str = None
 
+        frp_val = _safe_float(row.get("frp"), 0.0)
+        # BUG-B01: use pre-computed tier and proxy risk_score
+        risk_tier = row.get("_risk_tier", "LOW")
+        proxy_score = _safe_float(row.get("_risk_score"), 0.0)
+        days = int(row.get("active_days_last_7", 0) or 0)
+
         return {
             "id": row.get("event_id"),
             "location": {
                 "lat": _safe_float(row.get("latitude")),
                 "lon": _safe_float(row.get("longitude")),
             },
-            "frp": _safe_float(row.get("frp"), 0.0),
+            "frp": frp_val,
             "acq_date": str(row.get("acq_date")) if row.get("acq_date") else None,
             "source_label": row.get("source_label"),
-            "active_days_last_7": int(row.get("active_days_last_7", 0) or 0),
+            "active_days_last_7": days,
             "satellite": str(sat_raw) if sat_raw else None,
             "day_night": day_night_str,
+            "risk_tier": risk_tier,    # BUG-B01: pre-computed, no ML needed
+            "risk_score": proxy_score, # BUG-B01: proxy score for list view
         }
 
     def _assert_loaded(self) -> None:

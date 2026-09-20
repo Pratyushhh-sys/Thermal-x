@@ -158,7 +158,14 @@ class OSMService:
             return None, None
 
     def _buffer_analysis(self, facilities: List[Dict]) -> Dict[str, List[Dict]]:
-        """Assign facilities into 100m / 500m / 1000m buckets."""
+        """BUG-B08: Assign facilities into EXCLUSIVE rings (not cumulative).
+        
+        Old behaviour: a 50m facility appeared in 100m, 500m, AND 1000m buffers.
+        New behaviour: each buffer only contains facilities within THAT ring.
+          - 100m  : d <= 100m
+          - 500m  : 100m < d <= 500m
+          - 1000m : 500m < d <= 1000m
+        """
         buffers: Dict[str, List[Dict]] = {
             "100m": [],
             "500m": [],
@@ -169,11 +176,8 @@ class OSMService:
             item = {"type": f["type"], "name": f["name"], "distance_m": d}
             if d <= 100:
                 buffers["100m"].append(item)
-                buffers["500m"].append(item)
-                buffers["1000m"].append(item)
             elif d <= 500:
                 buffers["500m"].append(item)
-                buffers["1000m"].append(item)
             elif d <= 1000:
                 buffers["1000m"].append(item)
 

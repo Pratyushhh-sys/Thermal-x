@@ -3,12 +3,36 @@ import { X, Search, Filter, Factory, Flame, Zap, Shield, ArrowRight } from 'luci
 import { useThermal } from '../../context/ThermalContext';
 
 export const ExploreEventsModal: React.FC = () => {
-  const { events, selectEventById, activeModal, setActiveModal, setSelectedEvent, flyToLocation } = useThermal();
+  const { events, activeFilter, selectEventById, activeModal, setActiveModal, setSelectedEvent, flyToLocation } = useThermal();
 
   const [search, setSearch] = useState('');
   const [selectedRisk, setSelectedRisk] = useState<string>('All');
   const [selectedSource, setSelectedSource] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+
+  // Sync internal modal filters with the global activeFilter when opened
+  React.useEffect(() => {
+    if (activeModal === 'explore') {
+      setSearch(''); // BUG-07: always reset search when modal opens
+      if (activeFilter === 'high-risk') {
+        setSelectedRisk('High');
+        setSelectedSource('All');
+        setSelectedStatus('All');
+      } else if (activeFilter === 'industrial') {
+        setSelectedRisk('All');
+        setSelectedSource('Industrial');
+        setSelectedStatus('All');
+      } else if (activeFilter === 'investigation') {
+        setSelectedRisk('High'); // Show high risk for investigation
+        setSelectedSource('All');
+        setSelectedStatus('All');
+      } else {
+        setSelectedRisk('All');
+        setSelectedSource('All');
+        setSelectedStatus('All');
+      }
+    }
+  }, [activeModal, activeFilter]);
 
   if (activeModal !== 'explore') return null;
 
@@ -17,14 +41,18 @@ export const ExploreEventsModal: React.FC = () => {
       search === '' ||
       e.id.toLowerCase().includes(search.toLowerCase()) ||
       e.location.toLowerCase().includes(search.toLowerCase()) ||
+      e.probableSource.toLowerCase().includes(search.toLowerCase()) ||
       e.candidateSource.toLowerCase().includes(search.toLowerCase());
 
     const matchesRisk = selectedRisk === 'All' || e.risk === selectedRisk;
-    const matchesSource = selectedSource === 'All' || e.probableSource === selectedSource;
+    const matchesSource = selectedSource === 'All' || e.probableSource === selectedSource || (selectedSource === 'Industrial' && e.probableSource === 'Mining');
     const matchesStatus = selectedStatus === 'All' || e.status === selectedStatus;
 
     return matchesSearch && matchesRisk && matchesSource && matchesStatus;
   });
+
+  // Show at most 100 events to keep the list responsive
+  const displayedEvents = filtered.slice(0, 100);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-fadeIn">
@@ -92,7 +120,11 @@ export const ExploreEventsModal: React.FC = () => {
               className="w-full p-2 bg-white rounded-lg border border-slate-300 focus:outline-none"
             >
               <option value="All">All Probable Sources</option>
+              <option value="Agricultural">Agricultural</option>
+              <option value="Forest">Forest</option>
               <option value="Industrial">Industrial</option>
+              <option value="Mining">Mining</option>
+              <option value="Other">Other</option>
               <option value="Pipeline">Pipeline</option>
               <option value="Power Plant">Power Plant</option>
               <option value="Settlement">Settlement</option>
@@ -132,13 +164,13 @@ export const ExploreEventsModal: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((ev) => (
+              {displayedEvents.map((ev) => (
                 <tr
                   key={ev.id}
                   className="hover:bg-blue-50/50 cursor-pointer transition-colors"
                   onClick={() => {
                     selectEventById(ev.id);
-                    flyToLocation(ev.lat, ev.lng, 7);
+                    flyToLocation(ev.lat, ev.lng, 10);
                     setActiveModal(null);
                   }}
                 >
@@ -171,7 +203,7 @@ export const ExploreEventsModal: React.FC = () => {
             </tbody>
           </table>
 
-          {filtered.length === 0 && (
+          {displayedEvents.length === 0 && (
             <div className="text-center py-12 text-slate-400 text-sm">
               No thermal events matched your filter criteria.
             </div>
@@ -180,7 +212,10 @@ export const ExploreEventsModal: React.FC = () => {
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>Displaying {filtered.length} of {events.length} thermal records</span>
+          <span>
+            Showing <strong>{displayedEvents.length}</strong> of <strong>{filtered.length}</strong> matched records
+            {filtered.length > 100 && <span className="ml-2 text-amber-600 font-medium">(top 100 shown — use filters to narrow down)</span>}
+          </span>
           <button
             onClick={() => setActiveModal(null)}
             className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition-colors cursor-pointer"

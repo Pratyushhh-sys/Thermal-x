@@ -2,9 +2,14 @@ import React from 'react';
 import { MapPin, Factory, Crosshair, Calendar, FileText, ArrowRight } from 'lucide-react';
 import SatelliteThumbnail from '../../assets/SatelliteThumbnail';
 import { useThermal } from '../../context/ThermalContext';
+import InvestigationPriorityCard from '../intelligence/InvestigationPriorityCard';
+import WhyThisEventCard from '../intelligence/WhyThisEventCard';
+import EvidenceBreakdownCard from '../intelligence/EvidenceBreakdownCard';
+import NearbyAssetsCard from '../intelligence/NearbyAssetsCard';
+import DetectionTimelineCard from '../intelligence/DetectionTimelineCard';
 
 export const SelectedEventPanel: React.FC = () => {
-  const { selectedEvent, setActiveModal } = useThermal();
+  const { selectedEvent, setActiveModal, eventDetailLoading } = useThermal();
 
   if (!selectedEvent) {
     return (
@@ -17,7 +22,7 @@ export const SelectedEventPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-sm">
+    <div className="glass-card p-4 sm:p-5 premium-shadow">
       
       {/* Header matching Reference Image 2 */}
       <div className="flex items-center justify-between mb-4">
@@ -26,7 +31,7 @@ export const SelectedEventPanel: React.FC = () => {
         </h2>
         <button
           onClick={() => setActiveModal('explore')}
-          className="text-xs font-semibold text-[#0284C7] hover:text-[#0369A1] flex items-center space-x-1 group"
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center space-x-1 group"
         >
           <span>View All Events</span>
           <span className="group-hover:translate-x-0.5 transition-transform">→</span>
@@ -43,11 +48,24 @@ export const SelectedEventPanel: React.FC = () => {
 
           {/* Title, Risk Badge, Location, Coordinates */}
           <div className="flex-1 min-w-0">
-            {/* Risk Badge */}
-            <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 mb-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-              <span>{selectedEvent.risk === 'High' ? 'High Risk' : `${selectedEvent.risk} Risk`}</span>
-            </div>
+            {/* BUG-06: Risk Badge — correct color per tier, not always red */}
+          {(() => {
+            const riskColors = {
+              High: 'bg-red-50 text-red-600 border-red-200',
+              Medium: 'bg-amber-50 text-amber-700 border-amber-200',
+              Low: 'bg-green-50 text-green-700 border-green-200',
+            };
+            const dotColors = { High: 'bg-red-600', Medium: 'bg-amber-500', Low: 'bg-green-600' };
+            const tier = (selectedEvent.risk as 'High' | 'Medium' | 'Low') || 'Low';
+            return (
+              <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border mb-1 ${riskColors[tier] || riskColors.Low}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${dotColors[tier] || dotColors.Low}`}></span>
+                <span>
+                  {tier} Risk {selectedEvent.riskScore != null ? `(${Math.round(selectedEvent.riskScore)}%)` : ''}
+                </span>
+              </div>
+            );
+          })()}
 
             {/* Event ID */}
             <h3 className="text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
@@ -83,7 +101,7 @@ export const SelectedEventPanel: React.FC = () => {
             </span>
           </div>
 
-          {/* Confidence */}
+          {/* Confidence — BUG-13: show spinner while detail loads */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center space-x-2 text-slate-500">
               <div className="w-6 h-6 rounded-md bg-cyan-50 flex items-center justify-center text-cyan-600">
@@ -92,7 +110,15 @@ export const SelectedEventPanel: React.FC = () => {
               <span>Confidence</span>
             </div>
             <span className="font-semibold text-slate-800">
-              {selectedEvent.confidence}%
+              {eventDetailLoading ? (
+                <span className="inline-flex items-center space-x-1 text-slate-400">
+                  <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  <span className="text-xs">Loading...</span>
+                </span>
+              ) : `${selectedEvent.confidence}%`}
             </span>
           </div>
 
@@ -111,10 +137,19 @@ export const SelectedEventPanel: React.FC = () => {
 
         </div>
 
+        {/* --- INTELLIGENCE SUITE ENHANCEMENTS --- */}
+        <div className="space-y-3 pt-3 border-t border-slate-100">
+          <InvestigationPriorityCard event={selectedEvent} />
+          <WhyThisEventCard event={selectedEvent} />
+          <EvidenceBreakdownCard event={selectedEvent} />
+          <NearbyAssetsCard event={selectedEvent} />
+          <DetectionTimelineCard event={selectedEvent} />
+        </div>
+
         {/* Action Button: Open Event Report → matching Reference Image 2 */}
         <button
           onClick={() => setActiveModal('report')}
-          className="w-full mt-2 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-sm font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center space-x-2 group cursor-pointer"
+          className="w-full mt-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-xs sm:text-sm font-semibold py-3 px-4 rounded-xl premium-shadow transition-all duration-200 flex items-center justify-center space-x-2 group cursor-pointer"
         >
           <FileText className="w-4 h-4" />
           <span>Open Event Report</span>

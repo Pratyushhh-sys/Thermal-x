@@ -6,14 +6,26 @@ export const GenerateReportModal: React.FC = () => {
   const { events, selectedEvent, activeModal, setActiveModal, selectEventById } = useThermal();
 
   const [selectedEventId, setSelectedEventId] = useState(selectedEvent?.id || '');
+  const [eventSearch, setEventSearch] = useState(''); // BUG-04: search to narrow dropdown
   const [reportType, setReportType] = useState('full-attribution');
   const [dateRange, setDateRange] = useState('last-7-days');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedSuccess, setGeneratedSuccess] = useState(false);
 
+  // BUG-05: sync selectedEventId whenever modal opens so it reflects current selection
+  React.useEffect(() => {
+    if (activeModal === 'generate') {
+      setSelectedEventId(selectedEvent?.id || (events[0]?.id ?? ''));
+      setEventSearch('');
+      setGeneratedSuccess(false);
+    }
+  }, [activeModal]);
+
   if (activeModal !== 'generate') return null;
 
   const currentEv = events.find(e => e.id === selectedEventId) || selectedEvent;
+  // If no event is available at all, pick the first from the list
+  const displayEv = currentEv || events[0];
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -71,22 +83,22 @@ export const GenerateReportModal: React.FC = () => {
                   Report Dossier Successfully Generated
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
-                  Document ID: TX-REP-{currentEv.id}-2026.pdf (Signed with NIC e-Stamp)
+                  Document ID: TX-REP-{displayEv?.id ?? 'N/A'}-2026.pdf (Signed with NIC e-Stamp)
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 max-w-md mx-auto text-left space-y-1.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Event ID:</span>
-                  <span className="font-bold text-slate-800">{currentEv.id}</span>
+                  <span className="font-bold text-slate-800">{displayEv?.id ?? 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Target Facility:</span>
-                  <span className="font-semibold text-slate-800">{currentEv.candidateSource}</span>
+                  <span className="font-semibold text-slate-800">{displayEv?.candidateSource ?? 'Unknown'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">ML Confidence:</span>
-                  <span className="font-bold text-emerald-600">{currentEv.confidence}%</span>
+                  <span className="font-bold text-emerald-600">{displayEv?.confidence ?? 0}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Security Classification:</span>
@@ -120,17 +132,32 @@ export const GenerateReportModal: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Select Incident Event
                 </label>
-                <select
-                  value={selectedEventId}
-                  onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 rounded-lg border border-slate-300 text-slate-800 text-xs focus:ring-1 focus:ring-blue-500"
-                >
-                  {events.map((ev) => (
+                {/* BUG-04: Search filter to narrow the massive event list */}
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  value={eventSearch}
+                  onChange={e => setEventSearch(e.target.value)}
+                  placeholder="Search event ID or location..."
+                  className="w-full p-2 bg-white rounded-lg border border-slate-300 text-slate-800 text-xs focus:ring-1 focus:ring-blue-500 pl-8"
+                />
+                <svg className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <select
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 rounded-lg border border-slate-300 text-slate-800 text-xs focus:ring-1 focus:ring-blue-500"
+                size={5}
+              >
+                {events
+                  .filter(ev => !eventSearch.trim() || ev.id.toLowerCase().includes(eventSearch.toLowerCase()) || ev.location.toLowerCase().includes(eventSearch.toLowerCase()))
+                  .slice(0, 100)
+                  .map((ev) => (
                     <option key={ev.id} value={ev.id}>
-                      {ev.id} — {ev.location} ({ev.risk} Risk, {ev.candidateSource})
+                      {ev.id} — {ev.location} ({ev.risk} Risk)
                     </option>
                   ))}
-                </select>
+              </select>
               </div>
 
               {/* Report Template Type */}

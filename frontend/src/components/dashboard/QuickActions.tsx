@@ -16,7 +16,7 @@ export const QuickActions: React.FC = () => {
       {/* 1. View Live Map */}
       <div
         onClick={handleLiveMapClick}
-        className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex items-center justify-between group"
+        className="glass-card p-4 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group"
       >
         <div className="flex items-center space-x-3.5">
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
@@ -37,7 +37,7 @@ export const QuickActions: React.FC = () => {
       {/* 2. Explore Events */}
       <div
         onClick={() => setActiveModal('explore')}
-        className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-cyan-300 transition-all cursor-pointer flex items-center justify-between group"
+        className="glass-card p-4 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group"
       >
         <div className="flex items-center space-x-3.5">
           <div className="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
@@ -58,7 +58,7 @@ export const QuickActions: React.FC = () => {
       {/* 3. Generate Report */}
       <div
         onClick={() => setActiveModal('generate')}
-        className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex items-center justify-between group"
+        className="glass-card p-4 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group"
       >
         <div className="flex items-center space-x-3.5">
           <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
@@ -79,7 +79,7 @@ export const QuickActions: React.FC = () => {
       {/* 4. Source Attribution */}
       <div
         onClick={() => setActiveModal('attribution')}
-        className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex items-center justify-between group"
+        className="glass-card p-4 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group"
       >
         <div className="flex items-center space-x-3.5">
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">

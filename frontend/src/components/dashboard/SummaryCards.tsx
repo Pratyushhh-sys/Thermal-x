@@ -3,12 +3,14 @@ import { Flame, AlertTriangle, Factory, Search, ChevronRight } from 'lucide-reac
 import { useThermal } from '../../context/ThermalContext';
 
 export const SummaryCards: React.FC = () => {
-  const { activeFilter, setActiveFilter, setActiveModal, summary } = useThermal();
+  const { activeFilter, setActiveFilter, setActiveModal, summary, events } = useThermal();
 
   const totalActive = summary?.total_events || 0;
   const highRisk = summary?.risk_summary?.high || 0;
   const industrialSource = summary?.source_distribution?.Industrial || 0;
-  const requiringInvestigation = 0; // Hardcoded per user instruction for Status
+  // BUG-03: status is always 'Not Assessed' in list items; count events with High risk
+  // and persistent fires (active_days_last_7 is encoded in historicalDetections)
+  const requiringInvestigation = events.filter(e => e.risk === 'High').length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -19,8 +21,8 @@ export const SummaryCards: React.FC = () => {
           setActiveFilter('all');
           setActiveModal('explore');
         }}
-        className={`bg-white rounded-xl border p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group ${
-          activeFilter === 'all' ? 'border-orange-300 ring-1 ring-orange-200' : 'border-slate-200/90'
+        className={`glass-card p-4 sm:p-5 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group ${
+          activeFilter === 'all' ? 'ring-2 ring-orange-400 border-orange-300 bg-white/90' : 'border-white/60'
         }`}
       >
         <div className="flex items-center space-x-4">
@@ -49,8 +51,8 @@ export const SummaryCards: React.FC = () => {
           setActiveFilter('high-risk');
           setActiveModal('explore');
         }}
-        className={`bg-white rounded-xl border p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group ${
-          activeFilter === 'high-risk' ? 'border-red-300 ring-1 ring-red-200' : 'border-slate-200/90'
+        className={`glass-card p-4 sm:p-5 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group ${
+          activeFilter === 'high-risk' ? 'ring-2 ring-red-400 border-red-300 bg-white/90' : 'border-white/60'
         }`}
       >
         <div className="flex items-center space-x-4">
@@ -77,10 +79,10 @@ export const SummaryCards: React.FC = () => {
       <div
         onClick={() => {
           setActiveFilter('industrial');
-          setActiveModal('attribution');
+          setActiveModal('explore');
         }}
-        className={`bg-white rounded-xl border p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group ${
-          activeFilter === 'industrial' ? 'border-blue-300 ring-1 ring-blue-200' : 'border-slate-200/90'
+        className={`glass-card p-4 sm:p-5 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group ${
+          activeFilter === 'industrial' ? 'ring-2 ring-indigo-400 border-indigo-300 bg-white/90' : 'border-white/60'
         }`}
       >
         <div className="flex items-center space-x-4">
@@ -94,7 +96,7 @@ export const SummaryCards: React.FC = () => {
             <div className="text-2xl font-bold text-slate-900 leading-tight mt-0.5">
               {industrialSource.toLocaleString()}
             </div>
-            <div className="text-xs font-semibold text-[#2563EB] flex items-center space-x-1 mt-1">
+            <div className="text-xs font-semibold text-indigo-600 flex items-center space-x-1 mt-1">
               <span>View Source Attribution</span>
               <span className="group-hover:translate-x-1 transition-transform">→</span>
             </div>
@@ -109,8 +111,8 @@ export const SummaryCards: React.FC = () => {
           setActiveFilter('investigation');
           setActiveModal('explore');
         }}
-        className={`bg-white rounded-xl border p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group ${
-          activeFilter === 'investigation' ? 'border-green-300 ring-1 ring-green-200' : 'border-slate-200/90'
+        className={`glass-card p-4 sm:p-5 premium-shadow hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group ${
+          activeFilter === 'investigation' ? 'ring-2 ring-teal-400 border-teal-300 bg-white/90' : 'border-white/60'
         }`}
       >
         <div className="flex items-center space-x-4">

@@ -32,12 +32,15 @@ async def get_summary(request: Request) -> SummaryResponse:
     high_frp = stats["high_frp_events"]       # FRP >= 50 → likely HIGH
     persistent = stats["persistent_events"]   # active_days >= 4
 
-    # Conservative approximation — exact tiers require per-event risk computation
-    approx_high   = min(high_frp, total)
-    approx_medium = min(persistent - approx_high, total - approx_high)
-    if approx_medium < 0:
-        approx_medium = 0
-    approx_low    = total - approx_high - approx_medium
+    # BUG-B06: Old formula had approx_medium = persistent - approx_high which went
+    # negative because persistent events and high-FRP events heavily overlap.
+    # Fix: use independent, non-overlapping FRP thresholds.
+    #   HIGH   = FRP >= 50 MW  (intense, almost certainly high risk)
+    #   MEDIUM = FRP 15-50 MW  (moderate, usually medium)
+    #   LOW    = FRP < 15 MW   (low intensity)
+    approx_high   = int(stats.get("high_frp_events", 0))     # FRP >= 50
+    approx_medium = int(stats.get("moderate_frp_events", 0)) # FRP 15-49
+    approx_low    = max(0, total - approx_high - approx_medium)
     not_computed  = 0
 
     return SummaryResponse(
