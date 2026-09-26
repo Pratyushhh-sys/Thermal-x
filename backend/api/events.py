@@ -376,3 +376,101 @@ def _acq_time(row: dict) -> Optional[str]:
         return f"{int(t):04d} UTC"
     except (ValueError, TypeError):
         return str(t)
+
+# ---------------------------------------------------------------------------
+# GET /api/events/{event_id}/imagery
+# ---------------------------------------------------------------------------
+@router.get("/events/{event_id}/imagery", tags=["Events", "Imagery"])
+async def get_event_imagery_metadata(event_id: str, request: Request):
+    """
+    Returns imagery metadata for the event, separating Optical (Sentinel-2 L2A)
+    and Thermal (Sentinel-3 SLSTR S8).
+
+    Optical source: Sentinel-2 L2A, bands B04/B03/B02 (true-color RGB), 10 m
+    Thermal source: Sentinel-3 SLSTR S8 (10.85 um TIR), ~1 km at nadir, IRON ramp
+    Temporal window: +-6 hours for thermal scene matching.
+
+    NOTE: thermal.available will be False if no SLSTR scene exists in the
+    search window, or if the current Sentinel Hub subscription does not include
+    Sentinel-3 access. This is NOT an error — optical imagery is always primary.
+    """
+    from backend.services.thermal_imagery_service import thermal_imagery_service
+
+    event_svc = request.app.state.event_service
+    try:
+        row = event_svc.get_event_row(event_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    lat = float(row.get("latitude", 0))
+    lon = float(row.get("longitude", 0))
+    acq_date = row.get("acq_date")
+    acq_time_raw = row.get("acq_time")
+
+    # Build ISO acquisition string for optical
+    time_str = "00:00:00Z"
+    if acq_time_raw is not None and str(acq_time_raw).lower() != "nan":
+        try:
+            t = int(acq_time_raw)
+            time_str = f"{t // 100:02d}:{t % 100:02d}:00Z"
+        except (ValueError, TypeError):
+            pass
+    full_acq = f"{acq_date}T{time_str}" if acq_date else None
+
+    # ---- Optical block (Sentinel-2 L2A) ----
+    optical = {
+        "available": True,
+        "source": "Sentinel-2 L2A",
+        "satellite": "Sentinel-2A / Sentinel-2B",
+        "acquisition_time": full_acq,
+        "image_url": f"/api/imagery/{event_id}",
+        "metadata": {
+            "satellite": "Sentinel-2A / Sentinel-2B",
+            "product": "S2_L2A",
+            "bands": "B04 (R, 665 nm), B03 (G, 560 nm), B02 (B, 490 nm)",
+            "resolution": "10 m",
+            "processing_level": "L2A (Bottom-of-Atmosphere reflectance)",
+            "gain": "2.5x radiometric enhancement",
+        },
+    }
+
+    # ---- Thermal block (Sentinel-3 SLSTR S8) ----
+    # Attempt a lightweight metadata-only check (no image download for this endpoint).
+    # The actual image is served via GET /api/imagery/{event_id}/thermal.
+    thermal_result = thermal_imagery_service.fetch_thermal_image(
+        lat=lat,
+        lng=lon,
+        acq_date=str(acq_date) if acq_date else None,
+        acq_time_hhmm=str(acq_time_raw) if acq_time_raw else None,
+        event_id=event_id,
+        radius_km=5.0,
+    )
+
+    if thermal_result["available"]:
+        delta_min = thermal_result.get("time_delta_minutes")
+        delta_str = f"Scene acquired {delta_min} minutes from event detection" if delta_min is not None else None
+        thermal = {
+            "available": True,
+            "source": thermal_result["source"],
+            "acquisition_time": thermal_result.get("acquisition_time"),
+            "image_url": f"/api/imagery/{event_id}/thermal",
+            "time_delta_label": delta_str,
+            "metadata": thermal_result.get("metadata", {}),
+            "reason": None,
+        }
+    else:
+        thermal = {
+            "available": False,
+            "source": thermal_result.get("source", "Sentinel-3 SLSTR"),
+            "acquisition_time": None,
+            "image_url": None,
+            "time_delta_label": None,
+            "metadata": thermal_result.get("metadata", {}),
+            "reason": thermal_result.get("reason", "No compatible thermal scene available."),
+        }
+
+    return {
+        "event_id": event_id,
+        "optical": optical,
+        "thermal": thermal,
+    }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Factory, Crosshair, Calendar, FileText, ArrowRight } from 'lucide-react';
+import { MapPin, Factory, Crosshair, Calendar, FileText, ArrowRight, Send, ShieldAlert, History } from 'lucide-react';
 import SatelliteThumbnail from '../../assets/SatelliteThumbnail';
 import { useThermal } from '../../context/ThermalContext';
 import InvestigationPriorityCard from '../intelligence/InvestigationPriorityCard';
@@ -7,9 +7,10 @@ import WhyThisEventCard from '../intelligence/WhyThisEventCard';
 import EvidenceBreakdownCard from '../intelligence/EvidenceBreakdownCard';
 import NearbyAssetsCard from '../intelligence/NearbyAssetsCard';
 import DetectionTimelineCard from '../intelligence/DetectionTimelineCard';
+import { SatelliteIntelligence } from '../intelligence/SatelliteIntelligence';
 
 export const SelectedEventPanel: React.FC = () => {
-  const { selectedEvent, setActiveModal, eventDetailLoading } = useThermal();
+  const { selectedEvent, setActiveModal, eventDetailLoading, forwardHistory } = useThermal();
 
   if (!selectedEvent) {
     return (
@@ -43,9 +44,6 @@ export const SelectedEventPanel: React.FC = () => {
         
         {/* Top Info: Thumbnail + Title & Risk */}
         <div className="flex items-start space-x-3.5">
-          {/* Satellite Thumbnail with ID Badge */}
-          <SatelliteThumbnail eventId={selectedEvent.id} />
-
           {/* Title, Risk Badge, Location, Coordinates */}
           <div className="flex-1 min-w-0">
             {/* BUG-06: Risk Badge — correct color per tier, not always red */}
@@ -83,6 +81,11 @@ export const SelectedEventPanel: React.FC = () => {
               {selectedEvent.coordinates}
             </div>
           </div>
+        </div>
+
+        {/* Satellite Intelligence Viewer */}
+        <div className="mt-2">
+          <SatelliteIntelligence event={selectedEvent} />
         </div>
 
         {/* Telemetry Attributes List matching Reference Image 2 */}
@@ -155,6 +158,56 @@ export const SelectedEventPanel: React.FC = () => {
           <span>Open Event Report</span>
           <span className="group-hover:translate-x-1 transition-transform">→</span>
         </button>
+
+        {/* Forward Alert Section for High/Critical Risk */}
+        {(selectedEvent.risk === 'High' || (selectedEvent.riskScore && selectedEvent.riskScore >= 70)) && (
+          <div className="pt-2">
+            <button
+              onClick={() => setActiveModal('forward-alert')}
+              className={`w-full py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center space-x-2 group cursor-pointer ${
+                (selectedEvent.riskScore && selectedEvent.riskScore >= 90)
+                  ? 'bg-red-600 hover:bg-red-700 text-white font-bold'
+                  : 'bg-orange-600 hover:bg-orange-700 text-white font-bold'
+              }`}
+            >
+              {(selectedEvent.riskScore && selectedEvent.riskScore >= 90) ? (
+                <>
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>🚨 Forward Critical Alert</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>Forward to Authority</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Forwarding History Section */}
+        {forwardHistory && forwardHistory.length > 0 && (
+          <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 mb-2">
+              <History className="w-3.5 h-3.5 text-slate-500" />
+              <span>Forwarding History ({forwardHistory.length})</span>
+            </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+              {forwardHistory.map((record: any, idx: number) => (
+                <div key={idx} className="bg-white border border-slate-100 p-2 rounded-lg text-[10px]">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-semibold text-slate-700">{record.authority_name}</span>
+                    <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-bold">{record.status === 'SUBMITTED_FOR_FORWARDING' ? 'Submitted' : record.status}</span>
+                  </div>
+                  <div className="text-slate-500 flex justify-between">
+                    <span>{new Date(record.timestamp).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="font-mono text-slate-400">{record.tracking_id}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 

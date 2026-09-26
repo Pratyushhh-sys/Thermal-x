@@ -37,7 +37,7 @@ from fastapi.responses import JSONResponse
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.api import events, health, summary, notifications, imagery, system
+from backend.api import events, health, summary, notifications, imagery, system, alerts
 from backend.services.model_service import model_service
 from backend.services.event_service import event_service
 from backend.services.osm_service import osm_service
@@ -63,7 +63,13 @@ _ALLOWED_ORIGINS = [
 
 # BUG-B12: Limit concurrent expensive requests (each GET /api/events runs ML inference)
 _CONCURRENCY_LIMIT = int(os.getenv("API_CONCURRENCY", "4"))
-_request_semaphore: asyncio.Semaphore  # initialised in lifespan
+_request_semaphore: asyncio.Semaphore | None = None
+
+def get_request_semaphore() -> asyncio.Semaphore:
+    global _request_semaphore
+    if _request_semaphore is None:
+        _request_semaphore = asyncio.Semaphore(_CONCURRENCY_LIMIT)
+    return _request_semaphore
 
 
 # ---------------------------------------------------------------------------
@@ -158,12 +164,12 @@ app.add_middleware(
 # BUG-B12: Middleware to reject requests when the server is already at capacity
 @app.middleware("http")
 async def concurrency_limit_middleware(request: Request, call_next):
-    if not await _request_semaphore.acquire.__func__(_request_semaphore):
-        return JSONResponse(status_code=503, content={"detail": "Server busy, retry shortly"})
+    sem = get_request_semaphore()
+    await sem.acquire()
     try:
         return await call_next(request)
     finally:
-        _request_semaphore.release()
+        sem.release()
 
 # ---------------------------------------------------------------------------
 # Routers
@@ -174,6 +180,7 @@ app.include_router(events.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(imagery.router, prefix="/api")
 app.include_router(system.router, prefix="/api")
+app.include_router(alerts.router, prefix="/api")
 
 @app.get("/", tags=["Root"])
 async def root():

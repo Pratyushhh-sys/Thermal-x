@@ -10,6 +10,7 @@ import EventReportModal from '../components/modals/EventReportModal';
 import ExploreEventsModal from '../components/modals/ExploreEventsModal';
 import GenerateReportModal from '../components/modals/GenerateReportModal';
 import SourceAttributionModal from '../components/modals/SourceAttributionModal';
+import ForwardAlertModal from '../components/modals/ForwardAlertModal';
 
 export const DashboardPage: React.FC = () => {
   return (
@@ -34,16 +35,22 @@ export const DashboardPage: React.FC = () => {
             <ThermalMap />
           </div>
 
-          {/* RIGHT: Selected Event & Recent Investigations (Col 8/9 to 12) */}
-          <div className="lg:col-span-5 xl:col-span-4 w-full flex flex-col gap-5 h-[540px] lg:h-[610px] overflow-y-auto pr-2 pb-2">
+          {/* RIGHT: Selected Event Details (Col 8/9 to 12) */}
+          <div className="lg:col-span-5 xl:col-span-4 w-full h-[540px] lg:h-[610px] overflow-y-auto pr-1 pb-2">
             <SelectedEventPanel />
-            <RecentInvestigations />
           </div>
 
         </div>
 
+        {/* Prominent Recent Investigations Table */}
+        <div className="mt-6">
+          <RecentInvestigations />
+        </div>
+
         {/* Bottom Quick Actions Row matching Reference Image 2 */}
-        <QuickActions />
+        <div className="mt-6">
+          <QuickActions />
+        </div>
 
       </main>
 
@@ -57,6 +64,7 @@ export const DashboardPage: React.FC = () => {
       <ExploreEventsModal />
       <GenerateReportModal />
       <SourceAttributionModal />
+      <ForwardAlertModal />
     </div>
   );
 };

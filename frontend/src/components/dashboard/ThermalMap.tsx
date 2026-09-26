@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, ImageOverlay, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Search, Plus, Minus, Crosshair, Flame, Factory, Navigation, Satellite } from 'lucide-react';
+import { Search, Plus, Minus, Crosshair, Flame, Factory, Navigation, Satellite, Layers } from 'lucide-react';
 import { useThermal } from '../../context/ThermalContext';
 import { ThermalEvent } from '../../data/mockData';
+import { fetchEventImagery } from '../../api';
 
 // Leaflet map controller to handle programmatic pan & zoom
 const MapController: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
@@ -100,6 +101,70 @@ export const ThermalMap: React.FC = () => {
   const [mapSearchText, setMapSearchText] = useState('');
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [useSatellite, setUseSatellite] = useState(false);
+  const [showThermalOverlay, setShowThermalOverlay] = useState(false);
+  const [thermalOpacity, setThermalOpacity] = useState(60);
+  const [thermalImageUrl, setThermalImageUrl] = useState<string | null>(null);
+  const [thermalBounds, setThermalBounds] = useState<[[number, number], [number, number]] | null>(null);
+  const [thermalStatus, setThermalStatus] = useState<'idle' | 'loading' | 'available' | 'unavailable'>('idle');
+  const [thermalDeltaLabel, setThermalDeltaLabel] = useState<string | null>(null);
+
+  // Sync thermal imagery overlay with selected event
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!showThermalOverlay) {
+      setThermalImageUrl(null);
+      setThermalBounds(null);
+      setThermalStatus('idle');
+      setThermalDeltaLabel(null);
+      return;
+    }
+
+    if (!selectedEvent) {
+      setThermalImageUrl(null);
+      setThermalBounds(null);
+      setThermalStatus('unavailable');
+      setThermalDeltaLabel(null);
+      return;
+    }
+
+    // 5 km bounding box around event location matching Sentinel-3 SLSTR service
+    const latOffset = 5.0 / 111.0;
+    const lngCos = Math.cos((selectedEvent.lat * Math.PI) / 180.0);
+    const lngOffset = selectedEvent.lat !== 0 ? 5.0 / (111.0 * (lngCos !== 0 ? lngCos : 1.0)) : 5.0 / 111.0;
+
+    const bounds: [[number, number], [number, number]] = [
+      [selectedEvent.lat - latOffset, selectedEvent.lng - lngOffset],
+      [selectedEvent.lat + latOffset, selectedEvent.lng + lngOffset],
+    ];
+
+    setThermalBounds(bounds);
+    setThermalStatus('loading');
+
+    fetchEventImagery(selectedEvent.id)
+      .then((res) => {
+        if (isCancelled) return;
+        if (res && res.thermal && res.thermal.available && res.thermal.image_url) {
+          setThermalImageUrl(res.thermal.image_url);
+          setThermalDeltaLabel(res.thermal.time_delta_label || null);
+          setThermalStatus('available');
+        } else {
+          setThermalImageUrl(null);
+          setThermalDeltaLabel(null);
+          setThermalStatus('unavailable');
+        }
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        setThermalImageUrl(null);
+        setThermalDeltaLabel(null);
+        setThermalStatus('unavailable');
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [showThermalOverlay, selectedEvent]);
 
   const handleMapSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,6 +296,16 @@ export const ThermalMap: React.FC = () => {
             />
           );
         })}
+
+        {/* Sentinel-3 SLSTR Thermal Infrared Raster Overlay */}
+        {showThermalOverlay && thermalStatus === 'available' && thermalImageUrl && thermalBounds && (
+          <ImageOverlay
+            url={thermalImageUrl}
+            bounds={thermalBounds}
+            opacity={thermalOpacity / 100}
+            zIndex={450}
+          />
+        )}
       </MapContainer>
 
       {/* FLOATING OVERLAY: Top Left Search On Map matching Reference Image 2 */}
@@ -339,6 +414,80 @@ export const ThermalMap: React.FC = () => {
             <span className="w-3.5 border-b border-dashed border-slate-500 inline-block"></span>
             <span className="font-medium">Boundary</span>
           </label>
+
+          {/* Thermal Overlay */}
+          <div className="pt-2 mt-2 border-t border-slate-100">
+            <label className="flex items-center space-x-2 cursor-pointer hover:text-slate-900 text-slate-700">
+              <input
+                type="checkbox"
+                checked={showThermalOverlay}
+                onChange={(e) => setShowThermalOverlay(e.target.checked)}
+                className="rounded text-orange-500 focus:ring-0 w-3.5 h-3.5"
+              />
+              <Layers className="w-3.5 h-3.5 text-orange-500" />
+              <span className="font-medium">Thermal Overlay</span>
+            </label>
+            
+            {showThermalOverlay && (
+              <div className="pl-6 pt-1.5 space-y-2">
+                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Thermal Opacity</span>
+                  <span className="font-semibold text-orange-600">{thermalOpacity}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" max="100" 
+                  value={thermalOpacity} 
+                  onChange={(e) => setThermalOpacity(parseInt(e.target.value))}
+                  className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+
+                {/* Status indicator */}
+                {!selectedEvent && (
+                  <div className="text-[10px] text-slate-500 bg-slate-50 p-1.5 rounded border border-slate-200 leading-tight">
+                    Select an anomaly on the map to overlay Sentinel-3 SLSTR thermal data.
+                  </div>
+                )}
+
+                {selectedEvent && thermalStatus === 'loading' && (
+                  <div className="flex items-center space-x-1.5 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200 leading-tight">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Matching Sentinel-3 scene (±6h)...</span>
+                  </div>
+                )}
+
+                {selectedEvent && thermalStatus === 'available' && (
+                  <div className="space-y-1">
+                    <div className="text-[10px] text-emerald-700 bg-emerald-50 p-1.5 rounded border border-emerald-200 leading-tight font-medium flex items-center justify-between">
+                      <span>✓ Sentinel-3 SLSTR S8</span>
+                      <span className="text-[9px] text-emerald-600">10.85 µm</span>
+                    </div>
+                    {thermalDeltaLabel && (
+                      <div className="text-[9px] text-slate-500 truncate" title={thermalDeltaLabel}>
+                        {thermalDeltaLabel}
+                      </div>
+                    )}
+                    {/* Mini IRON Color Ramp */}
+                    <div className="mt-1 pt-1 border-t border-slate-100">
+                      <div className="h-1.5 rounded w-full bg-gradient-to-r from-black via-red-600 via-orange-500 via-yellow-400 to-white border border-slate-300"></div>
+                      <div className="flex justify-between text-[8px] text-slate-500 font-mono mt-0.5">
+                        <span>270K</span>
+                        <span className="text-[8px] text-slate-400">SLSTR IRON</span>
+                        <span>380K</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedEvent && thermalStatus === 'unavailable' && (
+                  <div className="text-[10px] text-orange-700 bg-orange-50 p-1.5 rounded border border-orange-200 leading-tight">
+                    <span className="font-semibold block mb-0.5">Thermal Scene Unavailable</span>
+                    No compatible Sentinel-3 SLSTR pass within ±6h window for this event.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Cloud, ChevronDown, User, Settings, Shield, LogOut, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Search, Bell, Cloud, ChevronDown, User, Settings, Shield, ShieldAlert, LogOut, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import FlameIcon from '../../assets/FlameIcon';
 import { useAuth } from '../../context/AuthContext';
 import { useThermal } from '../../context/ThermalContext';
@@ -17,6 +17,7 @@ export const DashboardNavbar: React.FC = () => {
     searchQuery,
     setSearchQuery,
     dataLoadedAt, // BUG-08/12
+    setActiveModal,
   } = useThermal();
   const navigate = useNavigate();
 
@@ -264,9 +265,26 @@ export const DashboardNavbar: React.FC = () => {
                           <span>{n.title}</span>
                           <span className="text-[10px] text-slate-400 font-normal">{n.time ?? (n as any).timestamp ?? ''}</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed line-clamp-2 mb-2">
                           {n.description ?? (n as any).message ?? ''}
                         </p>
+                        {n.type === 'urgent' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markNotificationRead(n.id);
+                              if (n.eventId) {
+                                selectEventById(n.eventId);
+                                setActiveModal('forward-alert');
+                                setIsNotificationOpen(false);
+                              }
+                            }}
+                            className="text-[10px] bg-red-100 hover:bg-red-200 text-red-700 font-bold px-2 py-1 rounded inline-flex items-center space-x-1 transition-colors"
+                          >
+                            <ShieldAlert className="w-3 h-3" />
+                            <span>🚨 Forward Critical Alert</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

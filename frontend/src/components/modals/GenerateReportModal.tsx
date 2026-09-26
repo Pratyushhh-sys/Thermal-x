@@ -11,6 +11,9 @@ export const GenerateReportModal: React.FC = () => {
   const [dateRange, setDateRange] = useState('last-7-days');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedSuccess, setGeneratedSuccess] = useState(false);
+  const [includeSatellite, setIncludeSatellite] = useState(true);
+  const [includeThermal, setIncludeThermal] = useState(true);
+  const [includeThermalMeta, setIncludeThermalMeta] = useState(true);
 
   // BUG-05: sync selectedEventId whenever modal opens so it reflects current selection
   React.useEffect(() => {
@@ -203,6 +206,27 @@ export const GenerateReportModal: React.FC = () => {
                   <option value="last-30-days">Last 30 Days (Historical Trend)</option>
                   <option value="last-90-days">Quarterly Environmental Audit</option>
                 </select>
+              </div>
+
+              {/* Imagery Inclusion Options */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Imagery & Evidence
+                </label>
+                <div className="flex flex-col space-y-2 text-xs text-slate-700">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" checked={includeSatellite} onChange={(e) => setIncludeSatellite(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                    <span>Include optical satellite image (Sentinel-2 L2A)</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" checked={includeThermal} onChange={(e) => setIncludeThermal(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                    <span>Include thermal image (If available)</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" checked={includeThermalMeta} onChange={(e) => setIncludeThermalMeta(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                    <span>Include thermal metadata</span>
+                  </label>
+                </div>
               </div>
 
               {/* Security Classification Note */}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { fetchEvents, fetchEventDetails, fetchSummary, fetchNotifications } from '../api';
+import { fetchEvents, fetchEventDetails, fetchSummary, fetchNotifications, fetchForwardHistory } from '../api';
 import {
   ThermalEvent,
   IndustrialFacility,
@@ -36,8 +36,8 @@ interface ThermalContextType {
   notifications: NotificationItem[];
   markNotificationRead: (id: string) => void;
   unreadCount: number;
-  activeModal: 'report' | 'explore' | 'generate' | 'attribution' | null;
-  setActiveModal: (modal: 'report' | 'explore' | 'generate' | 'attribution' | null) => void;
+  activeModal: 'report' | 'explore' | 'generate' | 'attribution' | 'forward-alert' | null;
+  setActiveModal: (modal: 'report' | 'explore' | 'generate' | 'attribution' | 'forward-alert' | null) => void;
   mapCenter: [number, number];
   mapZoom: number;
   flyToLocation: (lat: number, lng: number, zoom?: number) => void;
@@ -45,6 +45,8 @@ interface ThermalContextType {
   summary: any;
   loading: boolean;
   dataLoadedAt: Date | null; // BUG-08/12: track real data fetch time
+  forwardHistory: any[];
+  refreshForwardHistory: () => Promise<void>;
 }
 
 const ThermalContext = createContext<ThermalContextType | undefined>(undefined);
@@ -201,6 +203,7 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dataLoadedAt, setDataLoadedAt] = useState<Date | null>(null); // BUG-08/12: real timestamp
+  const [forwardHistory, setForwardHistory] = useState<any[]>([]);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [mapLayers, setMapLayers] = useState<MapLayersState>({
@@ -213,7 +216,7 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'high-risk' | 'industrial' | 'investigation'>('all');
-  const [activeModal, setActiveModal] = useState<'report' | 'explore' | 'generate' | 'attribution' | null>(null);
+  const [activeModal, setActiveModal] = useState<'report' | 'explore' | 'generate' | 'attribution' | 'forward-alert' | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState<number>(DEFAULT_ZOOM);
 
@@ -267,6 +270,15 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Set the basic event immediately so UI feels responsive
       setSelectedEvent(listEvent);
       setEventDetailLoading(true); // BUG-13: signal that detail is loading
+      
+      // Load forward history immediately
+      try {
+        const history = await fetchForwardHistory(listEvent.id);
+        setForwardHistory(history.records || []);
+      } catch (e) {
+        console.error("Failed to load forward history", e);
+        setForwardHistory([]);
+      }
 
       // Fetch rich details
       try {
@@ -371,6 +383,17 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setMapZoom(DEFAULT_ZOOM);
   };
 
+  const refreshForwardHistory = async () => {
+    if (selectedEvent) {
+      try {
+        const history = await fetchForwardHistory(selectedEvent.id);
+        setForwardHistory(history.records || []);
+      } catch (e) {
+        console.error("Failed to load forward history", e);
+      }
+    }
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(item => item.id === id ? { ...item, read: true } : item));
   };
@@ -414,6 +437,8 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         summary,
         loading,
         dataLoadedAt,
+        forwardHistory,
+        refreshForwardHistory,
       }}
     >
       {children}

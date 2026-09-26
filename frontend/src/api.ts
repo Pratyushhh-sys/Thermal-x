@@ -33,3 +33,49 @@ export async function fetchHealth() {
   if (!response.ok) throw new Error('Failed to fetch health');
   return response.json();
 }
+
+export async function fetchEventImagery(eventId: string) {
+  const response = await fetch(`${API_BASE_URL}/events/${eventId}/imagery`);
+  if (!response.ok) throw new Error('Failed to fetch imagery metadata');
+  return response.json();
+}
+
+export async function checkThermalImageAvailable(eventId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/imagery/${eventId}/thermal`, { method: 'HEAD' });
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchAuthorities() {
+  const response = await fetch(`${API_BASE_URL}/authorities`);
+  if (!response.ok) throw new Error('Failed to fetch authorities');
+  return response.json();
+}
+
+export async function forwardAlert(eventId: string, data: any) {
+  const response = await fetch(`${API_BASE_URL}/alerts/${eventId}/forward`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to forward alert');
+  }
+  return response.json();
+}
+
+export async function fetchForwardHistory(eventId: string) {
+  const response = await fetch(`${API_BASE_URL}/alerts/${eventId}/forward-history`);
+  if (!response.ok) {
+    // If not found, it might just mean no history yet.
+    if (response.status === 404) return { event_id: eventId, total: 0, records: [] };
+    throw new Error('Failed to fetch forward history');
+  }
+  return response.json();
+}

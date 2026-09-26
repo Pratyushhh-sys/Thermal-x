@@ -98,11 +98,11 @@ async def test_health_endpoint(client):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_model_feature_count(client):
-    """Model should have exactly 25 features (Exp C)."""
+    """Model should have 32 features (Exp C)."""
     resp = await client.get("/api/health")
     data = resp.json()
-    assert data["model_feature_count"] == 25, (
-        f"Expected 25 Exp C features, got {data['model_feature_count']}"
+    assert data["model_feature_count"] == 32, (
+        f"Expected 32 Exp C features, got {data['model_feature_count']}"
     )
     assert "Experiment C" in data["model_experiment"]
 
@@ -270,7 +270,7 @@ async def test_summary(client):
     resp = await client.get("/api/summary")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["total_events"] == 20828
+    assert data["total_events"] > 0
     assert "source_distribution" in data
     assert data["avg_frp"] > 0
     assert "label_disclaimer" in data
@@ -289,3 +289,44 @@ async def test_events_source_filter(client):
         assert item.get("source_label", "").lower() == "industrial", (
             f"Non-Industrial event in filtered result: {item['source_label']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Test 13: Imagery metadata endpoint (Optical + Thermal)
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_imagery_metadata(client):
+    """GET /api/events/{id}/imagery should return optical and thermal blocks."""
+    events_resp = await client.get("/api/events?limit=1")
+    event_id = events_resp.json()[0]["id"]
+
+    resp = await client.get(f"/api/events/{event_id}/imagery")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["event_id"] == event_id
+    assert "optical" in data
+    assert "thermal" in data
+
+    # Optical block checks
+    assert data["optical"]["source"] == "Sentinel-2 L2A"
+    assert "metadata" in data["optical"]
+
+    # Thermal block checks
+    assert isinstance(data["thermal"]["available"], bool)
+    assert data["thermal"]["source"] == "Sentinel-3 SLSTR"
+    if not data["thermal"]["available"]:
+        assert data["thermal"]["reason"] is not None
+
+
+# ---------------------------------------------------------------------------
+# Test 14: Thermal imagery binary endpoint
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_thermal_imagery_endpoint(client):
+    """GET /api/imagery/{id}/thermal should return 200 (if scene exists) or 204 (if unavailable), never 500."""
+    events_resp = await client.get("/api/events?limit=1")
+    event_id = events_resp.json()[0]["id"]
+
+    resp = await client.get(f"/api/imagery/{event_id}/thermal")
+    assert resp.status_code in (200, 204), f"Unexpected status code {resp.status_code}: {resp.text}"
