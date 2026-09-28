@@ -458,19 +458,36 @@ async def get_event_imagery_metadata(event_id: str, request: Request):
             "metadata": thermal_result.get("metadata", {}),
             "reason": None,
         }
-    else:
-        thermal = {
-            "available": False,
-            "source": thermal_result.get("source", "Sentinel-3 SLSTR"),
-            "acquisition_time": None,
-            "image_url": None,
-            "time_delta_label": None,
-            "metadata": thermal_result.get("metadata", {}),
-            "reason": thermal_result.get("reason", "No compatible thermal scene available."),
-        }
+    # ---- INSAT-3DR Geostationary Thermal Block (ISRO / MOSDAC) ----
+    from backend.services.insat_imagery_service import insat_imagery_service
+
+    frp_val = float(row.get("frp", 25.0)) if row.get("frp") is not None and str(row.get("frp")).lower() != "nan" else 25.0
+    bright_val = float(row.get("bright_ti4", 335.0)) if row.get("bright_ti4") is not None and str(row.get("bright_ti4")).lower() != "nan" else 335.0
+
+    insat_result = insat_imagery_service.fetch_insat_image(
+        lat=lat,
+        lng=lon,
+        acq_date=str(acq_date) if acq_date else None,
+        acq_time_hhmm=str(acq_time_raw) if acq_time_raw else None,
+        frp=frp_val,
+        brightness_k=bright_val,
+        event_id=event_id,
+    )
+
+    insat = {
+        "available": True,
+        "source": insat_result.get("source", "INSAT-3DR Imager"),
+        "satellite": insat_result.get("satellite", "INSAT-3DR / INSAT-3DS (ISRO)"),
+        "acquisition_time": insat_result.get("acquisition_time"),
+        "image_url": f"/api/imagery/{event_id}/insat",
+        "time_delta_label": insat_result.get("time_delta_label"),
+        "metadata": insat_result.get("metadata", {}),
+        "reason": None,
+    }
 
     return {
         "event_id": event_id,
         "optical": optical,
         "thermal": thermal,
+        "insat": insat,
     }

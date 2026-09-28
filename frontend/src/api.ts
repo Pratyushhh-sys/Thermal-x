@@ -49,6 +49,15 @@ export async function checkThermalImageAvailable(eventId: string): Promise<boole
   }
 }
 
+export async function checkInsatImageAvailable(eventId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/imagery/${eventId}/insat`, { method: 'HEAD' });
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchAuthorities() {
   const response = await fetch(`${API_BASE_URL}/authorities`);
   if (!response.ok) throw new Error('Failed to fetch authorities');

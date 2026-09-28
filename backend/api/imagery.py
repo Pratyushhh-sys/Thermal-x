@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from backend.services.event_service import event_service
 from backend.services.imagery_service import imagery_service
 from backend.services.thermal_imagery_service import thermal_imagery_service
+from backend.services.insat_imagery_service import insat_imagery_service
 
 router = APIRouter(prefix="/imagery", tags=["Imagery"])
 
@@ -121,5 +122,64 @@ def get_event_thermal_imagery(event_id: str, request: Request):
             "X-Thermal-Source": result.get("source", "Sentinel-3 SLSTR"),
             "X-Thermal-Acquisition": result.get("acquisition_time", ""),
             "X-Thermal-Delta-Minutes": str(result.get("time_delta_minutes", "")),
+        },
+    )
+
+
+@router.api_route("/{event_id}/insat", methods=["GET", "HEAD"])
+def get_event_insat_imagery(event_id: str, request: Request):
+    """
+    Fetches the INSAT-3DR / INSAT-3DS geostationary thermal infrared image
+    (MIR 3.9 um + TIR-1 10.8 um) for the given event ID.
+    Operated by ISRO / MOSDAC / IMD with continuous 15-30 minute revisit.
+    """
+    try:
+        event = event_service.get_event_row(event_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    lat = float(event.get("latitude", 0))
+    lng = float(event.get("longitude", 0))
+    acq_date = event.get("acq_date")
+    acq_time = event.get("acq_time")
+    frp = float(event.get("frp", 25.0)) if event.get("frp") is not None else 25.0
+    bright_ti4 = float(event.get("bright_ti4", 335.0)) if event.get("bright_ti4") is not None else 335.0
+
+    if lat == 0 and lng == 0:
+        raise HTTPException(status_code=400, detail="Invalid event coordinates")
+
+    result = insat_imagery_service.fetch_insat_image(
+        lat=lat,
+        lng=lng,
+        acq_date=str(acq_date) if acq_date else None,
+        acq_time_hhmm=str(acq_time) if acq_time else None,
+        frp=frp,
+        brightness_k=bright_ti4,
+        event_id=event_id,
+    )
+
+    if not result["available"] or not result["image_bytes"]:
+        return Response(status_code=204)
+
+    if request.method == "HEAD":
+        return Response(
+            status_code=200,
+            media_type="image/jpeg",
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "X-Satellite-Source": "INSAT-3DR Imager (ISRO)",
+                "X-Satellite-Orbit": "Geostationary (74.0° E)",
+                "X-Temporal-Cadence": "15-minute rapid scan",
+            },
+        )
+
+    return Response(
+        content=result["image_bytes"],
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "X-Satellite-Source": "INSAT-3DR Imager (ISRO)",
+            "X-Satellite-Orbit": "Geostationary (74.0° E)",
+            "X-Temporal-Cadence": "15-minute rapid scan",
         },
     )
