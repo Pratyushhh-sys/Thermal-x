@@ -458,6 +458,16 @@ async def get_event_imagery_metadata(event_id: str, request: Request):
             "metadata": thermal_result.get("metadata", {}),
             "reason": None,
         }
+    else:
+        thermal = {
+            "available": False,
+            "source": thermal_result.get("source", "Sentinel-3 SLSTR"),
+            "acquisition_time": None,
+            "image_url": None,
+            "time_delta_label": None,
+            "metadata": thermal_result.get("metadata", {}),
+            "reason": thermal_result.get("reason", "No compatible Sentinel-3 SLSTR scene available in ±6h window."),
+        }
     # ---- INSAT-3DR Geostationary Thermal Block (ISRO / MOSDAC) ----
     from backend.services.insat_imagery_service import insat_imagery_service
 

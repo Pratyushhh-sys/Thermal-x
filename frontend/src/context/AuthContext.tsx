@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface User {
   email: string;
   name: string;
-  role: string;
+  role: string;        // "ADMIN" | "VIEWER"
   initials: string;
 }
 
@@ -14,71 +18,117 @@ interface AuthContextType {
   logout: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// Context
+// ---------------------------------------------------------------------------
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_EMAIL = "official@thermalx.gov.in";
-const DEMO_PASSWORD = "ThermalX@123";
+// Backend base URL — uses Vite proxy so this is just '/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const saved = localStorage.getItem('thermalx_auth');
-    return saved === 'true';
+    return localStorage.getItem('thermalx_auth') === 'true';
   });
 
   const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('thermalx_user');
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch {
-        return null;
-      }
+    const saved = localStorage.getItem('thermalx_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { return null; }
     }
     return null;
   });
 
+  // On mount: verify the HttpOnly cookie is still valid via /api/auth/me
   useEffect(() => {
-    if (isAuthenticated && !user) {
-      setUser({
-        email: DEMO_EMAIL,
-        name: 'Admin',
-        role: 'Authorized Official',
-        initials: 'AS'
+    if (!isAuthenticated) return;
+    fetch(`${API_BASE}/auth/me`, { credentials: 'include' })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          const userData: User = {
+            email: data.email,
+            name: data.name,
+            role: data.role,
+            initials: data.initials || '',
+          };
+          setUser(userData);
+          localStorage.setItem('thermalx_user', JSON.stringify(userData));
+        } else {
+          // Cookie is gone / expired — clear local state
+          setIsAuthenticated(false);
+          setUser(null);
+          localStorage.removeItem('thermalx_auth');
+          localStorage.removeItem('thermalx_user');
+        }
+      })
+      .catch(() => {
+        // Network error — keep local state, will re-validate next mount
       });
-    }
-  }, [isAuthenticated, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    // Artificial brief delay for realistic government SSO response
-    await new Promise((resolve) => setTimeout(resolve, 600));
+  // ---------------------------------------------------------------------------
+  // login
+  // ---------------------------------------------------------------------------
 
+  const login = useCallback(async (
+    email: string,
+    pass: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     if (!email.trim() || !pass.trim()) {
-      return { success: false, error: "Please enter both Official Email / User ID and Password." };
+      return { success: false, error: 'Please enter both Official Email / User ID and Password.' };
     }
 
-    if (email.trim().toLowerCase() === DEMO_EMAIL.toLowerCase() && pass === DEMO_PASSWORD) {
+    try {
+      const body = new URLSearchParams({ username: email.trim(), password: pass });
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        credentials: 'include', // receive the HttpOnly cookie
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return { success: false, error: err.detail || 'Invalid credentials. Please try again.' };
+      }
+
+      const data = await response.json();
       const userData: User = {
-        email: DEMO_EMAIL,
-        name: 'Admin',
-        role: 'Authorized Official',
-        initials: 'AS'
+        email:    data.user.email,
+        name:     data.user.name,
+        role:     data.user.role,
+        initials: data.user.initials || '',
       };
+
       setIsAuthenticated(true);
       setUser(userData);
       localStorage.setItem('thermalx_auth', 'true');
       localStorage.setItem('thermalx_user', JSON.stringify(userData));
       return { success: true };
+    } catch {
+      return { success: false, error: 'Login request failed. Please check your connection.' };
     }
+  }, []);
 
-    return { success: false, error: "Invalid credentials. Please try again." };
-  };
+  // ---------------------------------------------------------------------------
+  // logout
+  // ---------------------------------------------------------------------------
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    // Tell backend to clear the cookie
+    fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('thermalx_auth');
     localStorage.removeItem('thermalx_user');
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
@@ -86,6 +136,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

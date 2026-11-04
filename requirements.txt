@@ -1,9 +1,9 @@
 # =============================================================================
 # Satellite-Based Industrial Fire & Thermal Source Attribution
-# SIH 2026 – PS 26162  |  Day 1 ML Pipeline + Day 2 Backend API
+# SIH 2026 - PS 26162  |  Day 1 ML Pipeline + Day 2 Backend API
 # =============================================================================
 
-# ── Day 2 Backend API ────────────────────────────────────────────────────────
+# -- Day 2 Backend API --------------------------------------------------------
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 httpx>=0.27.0              # async HTTP client (used in tests)
@@ -11,6 +11,9 @@ pytest>=8.0.0
 pytest-asyncio>=0.23.0
 anyio>=4.0.0               # async test backend
 
+# -- Authentication & Authorization -------------------------------------------
+passlib[bcrypt]>=1.7.4    # bcrypt password hashing
+python-jose[cryptography]>=3.3.0  # JWT signing and validation
 
 # Core data processing
 pandas>=2.0.0

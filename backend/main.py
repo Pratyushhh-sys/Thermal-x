@@ -4,10 +4,11 @@ backend/main.py
 FastAPI application factory for the Thermal Source Attribution backend.
 
 Startup sequence (lifespan):
-  1. Load ModelService (Exp C + Exp A models, encoders, feature columns)
-  2. Load EventService (20,828-row feature CSV → memory)
-  3. Load OSMService  (Day 1 BallTree cache → memory)
-  4. Register API routers
+  1. Initialize user accounts (auth)
+  2. Load ModelService (Exp C + Exp A models, encoders, feature columns)
+  3. Load EventService (20,828-row feature CSV -> memory)
+  4. Load OSMService  (Day 1 BallTree cache -> memory)
+  5. Register API routers
 
 Shutdown: no cleanup required (no DB connections, no file handles).
 
@@ -38,9 +39,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from backend.api import events, health, summary, notifications, imagery, system, alerts
+from backend.api import stream as sse_stream_router
+from backend.api import auth as auth_router
+from backend.api.auth import ensure_users_initialized
 from backend.services.model_service import model_service
 from backend.services.event_service import event_service
 from backend.services.osm_service import osm_service
+from backend.services.sse_service import sse_manager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -84,9 +89,16 @@ async def lifespan(app: FastAPI):
     Failure to load any service will prevent the API from starting.
     """
     logger.info("=" * 60)
-    logger.info("  Thermal Source Attribution API — Starting up")
+    logger.info("  Thermal Source Attribution API - Starting up")
     logger.info("  SIH 2026 PS 26162")
     logger.info("=" * 60)
+
+    # --- Initialize user accounts (creates/re-hashes users.json if needed) ---
+    ensure_users_initialized()
+
+    # --- Start SSE manager (heartbeat task) ---
+    sse_manager.start()
+    logger.info("SSE: connection manager started.")
 
     # --- Load model service ---
     logger.info("Loading model artifacts...")
@@ -126,7 +138,9 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("Thermal Source Attribution API — Shutdown complete.")
+    # --- Stop SSE manager ---
+    sse_manager.stop()
+    logger.info("Thermal Source Attribution API - Shutdown complete.")
 
 
 # ---------------------------------------------------------------------------
@@ -161,9 +175,19 @@ app.add_middleware(
 )
 
 
-# BUG-B12: Middleware to reject requests when the server is already at capacity
+# BUG-B12: Middleware to reject requests when the server is already at capacity.
+# NOTE: SSE streaming connections (/api/events/stream) must NOT hold the semaphore
+# for their entire lifetime - they are long-lived and would exhaust all slots,
+# blocking every other API request. The semaphore is acquired only for the initial
+# handshake/header write; StreamingResponse releases it before the body is streamed.
+_SSE_STREAM_PATH = "/api/events/stream"
+
 @app.middleware("http")
 async def concurrency_limit_middleware(request: Request, call_next):
+    # Skip semaphore entirely for SSE streaming endpoint so long-lived connections
+    # do not occupy a concurrency slot and starve other API clients.
+    if request.url.path == _SSE_STREAM_PATH:
+        return await call_next(request)
     sem = get_request_semaphore()
     await sem.acquire()
     try:
@@ -174,8 +198,13 @@ async def concurrency_limit_middleware(request: Request, call_next):
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
+# Auth router first (no prefix conflict with others)
+app.include_router(auth_router.router, prefix="/api")
 app.include_router(health.router, prefix="/api")
 app.include_router(summary.router, prefix="/api")
+# SSE stream router registered BEFORE events router so that the literal
+# path /api/events/stream is matched before the wildcard /api/events/{event_id}
+app.include_router(sse_stream_router.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(imagery.router, prefix="/api")

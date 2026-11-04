@@ -13,8 +13,9 @@
  * Does NOT hardcode "Online". Reflects actual API response.
  */
 import React, { useState, useCallback } from 'react';
-import { Activity, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Activity, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Radio } from 'lucide-react';
 import { fetchHealth } from '../../api';
+import { useThermal } from '../../context/ThermalContext';
 
 interface HealthData {
   status: string;
@@ -98,6 +99,7 @@ export const SystemHealthIndicator: React.FC<Props> = ({ initialData = null }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
+  const { sseStatus } = useThermal();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -153,6 +155,26 @@ export const SystemHealthIndicator: React.FC<Props> = ({ initialData = null }) =
             <span className="text-[10px] text-slate-500 tabular-nums">{row.detail}</span>
           </div>
         ))}
+        {/* SSE Live Stream row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {sseStatus === 'CONNECTED'
+              ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              : sseStatus === 'CONNECTING'
+              ? <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+              : sseStatus === 'ERROR'
+              ? <XCircle className="w-3.5 h-3.5 text-red-500" />
+              : <Radio className="w-3.5 h-3.5 text-slate-300" />
+            }
+            <span className="text-[11px] text-slate-700 font-medium">Live Stream</span>
+          </div>
+          <span className="text-[10px] text-slate-500 tabular-nums">
+            {sseStatus === 'CONNECTED' ? 'SSE Active'
+              : sseStatus === 'CONNECTING' ? 'Connecting…'
+              : sseStatus === 'ERROR' ? 'Reconnecting'
+              : 'Disconnected'}
+          </span>
+        </div>
       </div>
 
       {lastChecked && (

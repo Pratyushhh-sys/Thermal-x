@@ -10,3 +10,5 @@ frontend/node_modules/
 data/cache/
 data/*.grib
 data/*.idx
+data/users.json
+users.json

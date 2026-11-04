@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { fetchEvents, fetchEventDetails, fetchSummary, fetchNotifications, fetchForwardHistory } from '../api';
+import { useThermalEvents, SSEConnectionState } from '../hooks/useThermalEvents';
 import {
   ThermalEvent,
   IndustrialFacility,
@@ -47,6 +48,7 @@ interface ThermalContextType {
   dataLoadedAt: Date | null; // BUG-08/12: track real data fetch time
   forwardHistory: any[];
   refreshForwardHistory: () => Promise<void>;
+  sseStatus?: SSEConnectionState;
 }
 
 const ThermalContext = createContext<ThermalContextType | undefined>(undefined);
@@ -150,32 +152,35 @@ const resolveFacilityName = (lat: number, lon: number, sourceLabel: string = '')
 
 // Helper to map backend list item to frontend model
 const mapEventListItem = (apiItem: any): ThermalEvent => {
-  let riskTier = apiItem.risk_tier || 'Medium';
+  let riskTier = apiItem.risk_tier || apiItem.risk_level || 'Medium';
   if (riskTier) {
     riskTier = riskTier.charAt(0).toUpperCase() + riskTier.slice(1).toLowerCase();
   }
-  const sourceLabel = apiItem.source_label || 'Unknown';
+  const sourceLabel = apiItem.source_label || apiItem.source || 'Unknown';
   // BUG-02: Derive a meaningful display confidence from risk_score (0-100 → percentage)
   // risk_score is on 0-100 scale; we show it as a rough confidence proxy until detail is loaded
   const rawScore = apiItem.risk_score ?? null;
-  const displayConfidence = rawScore !== null ? Math.round(Math.min(100, Math.max(0, rawScore))) : null;
+  const displayConfidence = rawScore !== null
+    ? Math.round(Math.min(100, Math.max(0, rawScore)))
+    : (apiItem.confidence ? Math.round(apiItem.confidence * (apiItem.confidence <= 1 ? 100 : 1)) : null);
 
-  const lat = apiItem.location?.lat || 0;
-  const lon = apiItem.location?.lon || 0;
+  const lat = apiItem.location?.lat ?? apiItem.latitude ?? 0;
+  const lon = apiItem.location?.lon ?? apiItem.longitude ?? 0;
   const candidateSource = apiItem.candidate_source || resolveFacilityName(lat, lon, sourceLabel);
   const candidateType = apiItem.candidate_type || 'Industrial Facility';
 
   return {
-    id: apiItem.id,
+    id: apiItem.id || apiItem.event_id,
     location: `${Number(lat).toFixed(4)}° N, ${Number(lon).toFixed(4)}° E`,
     state: 'India',
     coordinates: `${lat}, ${lon}`,
     lat: lat,
     lng: lon,
     risk: riskTier as 'High' | 'Medium' | 'Low',
+    riskScore: typeof rawScore === 'number' ? rawScore : undefined,
     probableSource: sourceLabel,
     confidence: displayConfidence ?? 0, // BUG-02: no longer hardcoded 0
-    detectedOn: apiItem.acq_date || 'Unknown',
+    detectedOn: apiItem.acq_date || apiItem.timestamp || 'Unknown',
     status: 'Not Assessed',
     frp: `${apiItem.frp} MW`,
     intensity: '—', // BUG-13: use dash instead of 'Unknown' for unfetched fields
@@ -186,7 +191,7 @@ const mapEventListItem = (apiItem: any): ThermalEvent => {
     thermalCorrelation: '—',
     temporalCorrelation: '—',
     historicalDetections: `${apiItem.active_days_last_7 || 0} active days`,
-    attributionReasoning: 'Click to load full analysis.',
+    attributionReasoning: apiItem.attributionReasoning || 'Click to load full analysis.',
     windSpeed: '—',
     plumeDirection: '—',
     markerType: getMarkerType(sourceLabel, riskTier),
@@ -255,6 +260,82 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     loadData();
   }, []);
+
+  // Real-time Server-Sent Events (SSE) integration
+  const { connectionStatus: sseStatus } = useThermalEvents({
+    enabled: true,
+    onThermalEvent: (incomingEvent: any) => {
+      if (!incomingEvent) return;
+      const mapped = mapEventListItem(incomingEvent);
+      if (!mapped.id) return;
+      setEvents(prev => {
+        // Prevent duplicate events
+        if (prev.some(e => e.id.toLowerCase() === mapped.id.toLowerCase())) {
+          return prev;
+        }
+        return [mapped, ...prev];
+      });
+    },
+    onHighRiskAlert: (incomingAlert: any) => {
+      if (!incomingAlert || !incomingAlert.event_id) return;
+      const notifId = `notif_${incomingAlert.event_id}`;
+      setNotifications(prev => {
+        if (prev.some(n => n.id === notifId || n.eventId === incomingAlert.event_id)) {
+          return prev;
+        }
+        const lat = incomingAlert.latitude != null ? Number(incomingAlert.latitude).toFixed(3) : '';
+        const lon = incomingAlert.longitude != null ? Number(incomingAlert.longitude).toFixed(3) : '';
+        const coords = lat && lon ? ` at ${lat}, ${lon}` : '';
+        const newNotif: NotificationItem = {
+          id: notifId,
+          title: `High Risk Anomaly: ${incomingAlert.source || 'Industrial'}`,
+          description: `Critical FRP (${incomingAlert.frp || 0} MW) detected${coords}. Immediate review required.`,
+          message: `Critical FRP (${incomingAlert.frp || 0} MW) detected. Immediate review required.`,
+          time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: incomingAlert.timestamp || new Date().toISOString(),
+          type: 'urgent',
+          read: false,
+          eventId: incomingAlert.event_id,
+        };
+        return [newNotif, ...prev];
+      });
+    },
+    onNotification: (incomingNotif: any) => {
+      if (!incomingNotif || !incomingNotif.id) return;
+      setNotifications(prev => {
+        if (prev.some(n => n.id === incomingNotif.id)) return prev;
+        const norm: NotificationItem = {
+          id: incomingNotif.id,
+          title: incomingNotif.title || 'Thermal Alert',
+          description: incomingNotif.message || incomingNotif.description || '',
+          message: incomingNotif.message || incomingNotif.description || '',
+          time: incomingNotif.timestamp ? new Date(incomingNotif.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : (incomingNotif.time || ''),
+          timestamp: incomingNotif.timestamp || new Date().toISOString(),
+          type: (incomingNotif.type as 'urgent' | 'info' | 'warning') || 'info',
+          read: incomingNotif.read ?? false,
+          eventId: incomingNotif.eventId || incomingNotif.event_id,
+        };
+        return [norm, ...prev];
+      });
+    },
+    onDashboardUpdate: (update: any) => {
+      if (!update) return;
+      setSummary((prev: any) => {
+        if (!prev) return update;
+        return {
+          ...prev,
+          total_events: update.total_events ?? prev.total_events,
+          high_frp_events: update.high_frp_events ?? prev.high_frp_events,
+          source_distribution: update.source_distribution
+            ? { ...prev.source_distribution, ...update.source_distribution }
+            : prev.source_distribution,
+          risk_summary: update.risk_summary
+            ? { ...prev.risk_summary, ...update.risk_summary }
+            : prev.risk_summary,
+        };
+      });
+    },
+  });
 
   const toggleMapLayer = (layer: keyof MapLayersState) => {
     setMapLayers(prev => ({ ...prev, [layer]: !prev[layer] }));
@@ -439,6 +520,7 @@ export const ThermalProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dataLoadedAt,
         forwardHistory,
         refreshForwardHistory,
+        sseStatus,
       }}
     >
       {children}

@@ -1,7 +1,26 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+/**
+ * Authenticated fetch wrapper.
+ * Sends cookies (HttpOnly access_token) with every request.
+ * On 401, clears local auth state and reloads to the login page.
+ */
+async function authFetch(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(input, {
+    ...init,
+    credentials: 'include', // always send HttpOnly cookie
+  });
+  if (response.status === 401) {
+    // Session expired — clear client state and redirect to login
+    localStorage.removeItem('thermalx_auth');
+    localStorage.removeItem('thermalx_user');
+    window.location.href = '/login';
+  }
+  return response;
+}
 
 export async function fetchSummary() {
-  const response = await fetch(`${API_BASE_URL}/summary`);
+  const response = await authFetch(`${API_BASE_URL}/summary`);
   if (!response.ok) throw new Error('Failed to fetch summary');
   return response.json();
 }
@@ -11,38 +30,38 @@ export async function fetchEvents(limit = 100, offset = 0, source?: string, sate
   if (source) params.append('source', source);
   if (satellite) params.append('satellite', satellite);
   
-  const response = await fetch(`${API_BASE_URL}/events?${params.toString()}`);
+  const response = await authFetch(`${API_BASE_URL}/events?${params.toString()}`);
   if (!response.ok) throw new Error('Failed to fetch events');
   return response.json();
 }
 
 export async function fetchEventDetails(eventId: string) {
-  const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+  const response = await authFetch(`${API_BASE_URL}/events/${eventId}`);
   if (!response.ok) throw new Error('Failed to fetch event details');
   return response.json();
 }
 
 export async function fetchNotifications() {
-  const response = await fetch(`${API_BASE_URL}/notifications`);
+  const response = await authFetch(`${API_BASE_URL}/notifications`);
   if (!response.ok) throw new Error('Failed to fetch notifications');
   return response.json();
 }
 
 export async function fetchHealth() {
-  const response = await fetch(`${API_BASE_URL}/health`);
+  const response = await authFetch(`${API_BASE_URL}/health`);
   if (!response.ok) throw new Error('Failed to fetch health');
   return response.json();
 }
 
 export async function fetchEventImagery(eventId: string) {
-  const response = await fetch(`${API_BASE_URL}/events/${eventId}/imagery`);
+  const response = await authFetch(`${API_BASE_URL}/events/${eventId}/imagery`);
   if (!response.ok) throw new Error('Failed to fetch imagery metadata');
   return response.json();
 }
 
 export async function checkThermalImageAvailable(eventId: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/imagery/${eventId}/thermal`, { method: 'HEAD' });
+    const response = await authFetch(`${API_BASE_URL}/imagery/${eventId}/thermal`, { method: 'HEAD' });
     return response.status === 200;
   } catch {
     return false;
@@ -51,7 +70,7 @@ export async function checkThermalImageAvailable(eventId: string): Promise<boole
 
 export async function checkInsatImageAvailable(eventId: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/imagery/${eventId}/insat`, { method: 'HEAD' });
+    const response = await authFetch(`${API_BASE_URL}/imagery/${eventId}/insat`, { method: 'HEAD' });
     return response.status === 200;
   } catch {
     return false;
@@ -59,13 +78,13 @@ export async function checkInsatImageAvailable(eventId: string): Promise<boolean
 }
 
 export async function fetchAuthorities() {
-  const response = await fetch(`${API_BASE_URL}/authorities`);
+  const response = await authFetch(`${API_BASE_URL}/authorities`);
   if (!response.ok) throw new Error('Failed to fetch authorities');
   return response.json();
 }
 
 export async function forwardAlert(eventId: string, data: any) {
-  const response = await fetch(`${API_BASE_URL}/alerts/${eventId}/forward`, {
+  const response = await authFetch(`${API_BASE_URL}/alerts/${eventId}/forward`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -80,7 +99,7 @@ export async function forwardAlert(eventId: string, data: any) {
 }
 
 export async function fetchForwardHistory(eventId: string) {
-  const response = await fetch(`${API_BASE_URL}/alerts/${eventId}/forward-history`);
+  const response = await authFetch(`${API_BASE_URL}/alerts/${eventId}/forward-history`);
   if (!response.ok) {
     // If not found, it might just mean no history yet.
     if (response.status === 404) return { event_id: eventId, total: 0, records: [] };

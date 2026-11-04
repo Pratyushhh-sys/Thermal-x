@@ -18,6 +18,7 @@ export const DashboardNavbar: React.FC = () => {
     setSearchQuery,
     dataLoadedAt, // BUG-08/12
     setActiveModal,
+    sseStatus,
   } = useThermal();
   const navigate = useNavigate();
 
@@ -172,12 +173,29 @@ export const DashboardNavbar: React.FC = () => {
         {/* Right Controls: Live Monitoring, Freshness, Notifications, Profile */}
         <div className="flex items-center space-x-3 sm:space-x-5 flex-shrink-0">
           
-          {/* Live Monitoring Badge with Pulsing Dot */}
+          {/* Live Monitoring Badge — reflects real SSE connection state */}
           <div className="hidden md:flex flex-col items-end text-right">
-            <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-600">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span className="tracking-wide">LIVE MONITORING</span>
-            </div>
+            {sseStatus === 'CONNECTED' ? (
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-600">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span className="tracking-wide">LIVE MONITORING</span>
+              </div>
+            ) : sseStatus === 'CONNECTING' ? (
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-600">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span className="tracking-wide">CONNECTING…</span>
+              </div>
+            ) : sseStatus === 'ERROR' ? (
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-red-500">
+                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                <span className="tracking-wide">STREAM ERROR</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-400">
+                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span className="tracking-wide">DISCONNECTED</span>
+              </div>
+            )}
             <span className="text-[10px] text-slate-400 font-medium">
               Last update: {currentTime} (IST)
             </span>

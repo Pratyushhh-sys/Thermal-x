@@ -203,6 +203,30 @@ class EventService:
     def obs_window(self) -> dict:
         return self._obs_window
 
+    def add_event(self, event_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Additive SSE Support: Register a newly processed event into the in-memory store.
+        Allows live/simulated events to be queried via REST APIs and reflected in summaries.
+        """
+        self._assert_loaded()
+        event_id = event_dict.get("event_id") or event_dict.get("id") or f"TH{len(self._df):05d}"
+        event_dict["event_id"] = event_id
+        event_dict["event_idx"] = len(self._df)
+
+        frp_val = _safe_float(event_dict.get("frp"), 0.0)
+        days = int(event_dict.get("active_days_last_7") or 0)
+        if "_risk_score" not in event_dict:
+            thermal = min(100.0, (frp_val / 60.0) * 100.0)
+            persistence = min(100.0, (days / 4.0) * 100.0)
+            event_dict["_risk_score"] = round(0.30 * thermal + 0.30 * persistence + 19.0, 2)
+        if "_risk_tier" not in event_dict:
+            event_dict["_risk_tier"] = "HIGH" if event_dict["_risk_score"] >= 70.0 else ("MEDIUM" if event_dict["_risk_score"] >= 45.0 else "LOW")
+
+        new_row_df = pd.DataFrame([event_dict])
+        self._df = pd.concat([self._df, new_row_df], ignore_index=True)
+        logger.info("EventService: added new event %s (total events: %d)", event_id, len(self._df))
+        return event_dict
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------

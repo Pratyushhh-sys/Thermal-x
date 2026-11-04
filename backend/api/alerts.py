@@ -21,7 +21,7 @@ Prototype note:
 import logging
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from backend.schemas.alert_forward_schema import (
     AlertForwardRequest,
@@ -34,6 +34,7 @@ from backend.services.classification_service import classify_event
 from backend.services.persistence_service import extract_persistence_from_row
 from backend.services.risk_service import compute_risk
 from backend.api.events import _nearest_hazard_type
+from backend.api.dependencies import require_role
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -43,7 +44,7 @@ router = APIRouter()
 # GET /api/authorities
 # ---------------------------------------------------------------------------
 @router.get("/authorities", response_model=List[AuthorityRecord], tags=["Alert Forwarding"])
-async def list_authorities() -> List[AuthorityRecord]:
+async def list_authorities(current_user: dict = Depends(require_role("ADMIN", "VIEWER"))) -> List[AuthorityRecord]:
     """
     Return the list of selectable concerned authorities for alert forwarding.
     These are configurable mock records for the SIH prototype.
@@ -63,6 +64,7 @@ async def forward_alert(
     event_id: str,
     payload: AlertForwardRequest,
     request: Request,
+    current_user: dict = Depends(require_role("ADMIN")),
 ) -> AlertForwardResponse:
     """
     Forward a HIGH or CRITICAL risk thermal event to a concerned authority.
@@ -168,6 +170,7 @@ async def forward_alert(
 async def get_forward_history(
     event_id: str,
     request: Request,
+    current_user: dict = Depends(require_role("ADMIN", "VIEWER")),
 ) -> ForwardHistoryResponse:
     """
     Return the forwarding history for a thermal event.
